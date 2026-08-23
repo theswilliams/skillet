@@ -58,7 +58,7 @@ export default function HomePage() {
         <section className="animate-slide-up overflow-hidden rounded-3xl border border-[var(--color-line)] bg-[var(--color-card)] card-shadow-lg">
           <p className="px-5 pt-4 text-xs font-bold uppercase tracking-wide text-[var(--color-coral)]">Tonight</p>
           <Link href={`/recipe/${data.tonight.recipe.slug}`} className="flex items-center gap-4 px-5 py-3">
-            <RecipeArt hue={data.tonight.recipe.hue} emoji={data.tonight.recipe.emoji} size="sm" className="h-20 w-20 shrink-0 rounded-2xl" />
+            <RecipeArt hue={data.tonight.recipe.hue} emoji={data.tonight.recipe.emoji} imageUrl={data.tonight.recipe.imageUrl} size="sm" className="h-20 w-20 shrink-0 rounded-2xl" />
             <div className="min-w-0">
               <h3 className="truncate text-lg font-bold">{data.tonight.recipe.name}</h3>
               <p className="text-sm text-[var(--color-ink-soft)]">

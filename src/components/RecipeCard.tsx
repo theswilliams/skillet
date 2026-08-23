@@ -10,7 +10,7 @@ export function RecipeCard({ recipe, subtitle }: { recipe: RecipeDTO; subtitle?:
       href={`/recipe/${recipe.slug}`}
       className="group flex w-44 shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] card-shadow transition-transform hover:-translate-y-0.5 sm:w-52"
     >
-      <RecipeArt hue={recipe.hue} emoji={recipe.emoji} size="sm" className="aspect-[4/3] w-full" />
+      <RecipeArt hue={recipe.hue} emoji={recipe.emoji} imageUrl={recipe.imageUrl} size="sm" className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-1 p-3">
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--color-ink)]">{recipe.name}</h3>
         <p className="text-xs text-[var(--color-ink-soft)]">

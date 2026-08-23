@@ -85,7 +85,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
   return (
     <div className="mx-auto max-w-2xl pb-28 md:pb-10">
       <div className="relative">
-        <RecipeArt hue={recipe.hue} emoji={recipe.emoji} size="lg" className="h-64 w-full sm:h-80 sm:rounded-b-3xl" />
+        <RecipeArt hue={recipe.hue} emoji={recipe.emoji} imageUrl={recipe.imageUrl} size="lg" className="h-64 w-full sm:h-80 sm:rounded-b-3xl" />
         <button
           onClick={() => router.back()}
           className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg font-bold shadow"

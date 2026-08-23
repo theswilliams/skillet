@@ -11,6 +11,7 @@ export function serializeRecipe(recipe: RecipeWithIngredients) {
     description: recipe.description,
     emoji: recipe.emoji,
     hue: recipe.hue,
+    imageUrl: recipe.imageUrl,
     instructions: JSON.parse(recipe.instructions) as string[],
     prepMinutes: recipe.prepMinutes,
     cookMinutes: recipe.cookMinutes,

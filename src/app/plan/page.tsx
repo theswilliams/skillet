@@ -161,7 +161,7 @@ export default function PlanPage() {
                       className={`flex items-center gap-3 rounded-xl border border-[var(--color-line)] p-2 ${busyItem === item.id ? "opacity-50" : ""}`}
                     >
                       <Link href={`/recipe/${item.recipe.slug}`} className="flex flex-1 items-center gap-3 min-w-0">
-                        <RecipeArt hue={item.recipe.hue} emoji={item.recipe.emoji} size="sm" className="h-14 w-14 shrink-0 rounded-xl" />
+                        <RecipeArt hue={item.recipe.hue} emoji={item.recipe.emoji} imageUrl={item.recipe.imageUrl} size="sm" className="h-14 w-14 shrink-0 rounded-xl" />
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold">{item.recipe.name}</p>
                           <p className="text-xs text-[var(--color-ink-soft)]">
@@ -264,7 +264,7 @@ function RecipePicker({ onClose, onPick }: { onClose: () => void; onPick: (r: Re
             <div className="flex flex-col divide-y divide-[var(--color-line)]">
               {recipes.map((r) => (
                 <button key={r.id} onClick={() => onPick(r)} className="flex items-center gap-3 py-2.5 text-left">
-                  <RecipeArt hue={r.hue} emoji={r.emoji} size="sm" className="h-12 w-12 shrink-0 rounded-lg" />
+                  <RecipeArt hue={r.hue} emoji={r.emoji} imageUrl={r.imageUrl} size="sm" className="h-12 w-12 shrink-0 rounded-lg" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{r.name}</p>
                     <p className="text-xs text-[var(--color-ink-soft)]">

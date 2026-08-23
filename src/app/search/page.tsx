@@ -118,7 +118,7 @@ export default function SearchPage() {
                 href={`/recipe/${r.slug}`}
                 className="flex flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white card-shadow"
               >
-                <RecipeArt hue={r.hue} emoji={r.emoji} size="sm" className="aspect-[4/3] w-full" />
+                <RecipeArt hue={r.hue} emoji={r.emoji} imageUrl={r.imageUrl} size="sm" className="aspect-[4/3] w-full" />
                 <div className="flex flex-1 flex-col gap-1 p-3">
                   <h3 className="line-clamp-2 text-sm font-semibold leading-snug">{r.name}</h3>
                   <p className="text-xs text-[var(--color-ink-soft)]">

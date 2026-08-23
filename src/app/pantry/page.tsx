@@ -163,7 +163,7 @@ export default function PantryPage() {
                 <div className="flex flex-col divide-y divide-[var(--color-line)]">
                   {available.map((r) => (
                     <Link key={r.id} href={`/recipe/${r.slug}`} className="flex items-center gap-3 py-2.5">
-                      <RecipeArt hue={r.hue} emoji={r.emoji} size="sm" className="h-12 w-12 shrink-0 rounded-lg" />
+                      <RecipeArt hue={r.hue} emoji={r.emoji} imageUrl={r.imageUrl} size="sm" className="h-12 w-12 shrink-0 rounded-lg" />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{r.name}</p>
                         <p className="text-xs text-[var(--color-ink-soft)]">

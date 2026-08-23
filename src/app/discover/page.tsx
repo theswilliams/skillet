@@ -146,7 +146,7 @@ function SwipeCard({
       whileTap={isTop ? { cursor: "grabbing" } : undefined}
     >
       <div className="relative h-3/5 shrink-0">
-        <RecipeArt hue={recipe.hue} emoji={recipe.emoji} size="lg" className="h-full w-full" />
+        <RecipeArt hue={recipe.hue} emoji={recipe.emoji} imageUrl={recipe.imageUrl} size="lg" className="h-full w-full" />
         {isTop && (
           <>
             <motion.div style={{ opacity: likeOpacity }} className="absolute left-5 top-5 rotate-[-12deg] rounded-lg border-4 border-[var(--color-mint)] px-3 py-1 text-xl font-black text-[var(--color-mint)]">

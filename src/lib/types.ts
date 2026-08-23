@@ -22,6 +22,7 @@ export type RecipeDTO = {
   description: string;
   emoji: string;
   hue: number;
+  imageUrl: string | null;
   instructions: string[];
   prepMinutes: number;
   cookMinutes: number;

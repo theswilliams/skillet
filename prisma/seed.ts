@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { INGREDIENTS } from "./data/ingredients";
 import { RECIPES } from "./data/recipes";
+import { RECIPE_IMAGES } from "./data/images";
 
 const prisma = new PrismaClient();
 
@@ -46,6 +47,7 @@ async function main() {
         name: r.name,
         description: r.description,
         emoji: r.emoji,
+        imageUrl: RECIPE_IMAGES[r.slug] ?? null,
         hue: r.hue,
         instructions: JSON.stringify(r.instructions),
         prepMinutes: r.prepMinutes,
@@ -69,6 +71,7 @@ async function main() {
         name: r.name,
         description: r.description,
         emoji: r.emoji,
+        imageUrl: RECIPE_IMAGES[r.slug] ?? null,
         hue: r.hue,
         instructions: JSON.stringify(r.instructions),
         prepMinutes: r.prepMinutes,
