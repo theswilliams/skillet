@@ -51,6 +51,10 @@ export type PantryMatchDTO = {
   missing: { name: string; slug: string }[];
   matchPct: number;
   canMake: boolean;
+  primaryHaveCount: number;
+  primaryNeededCount: number;
+  primaryMatchPct: number;
+  majorityMatch: boolean;
 };
 
 export type PreferencesDTO = {

@@ -127,8 +127,10 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
               <p className="text-sm font-semibold text-[var(--color-mint)]">✓ You have everything for this recipe!</p>
             ) : (
               <>
-                <p className="text-sm font-semibold">
+                <p className={`text-sm font-semibold ${pantryMatch.majorityMatch ? "text-[var(--color-gold)]" : ""}`}>
+                  {pantryMatch.majorityMatch && "★ "}
                   You have {pantryMatch.haveCount}/{pantryMatch.neededCount} ingredients
+                  {pantryMatch.majorityMatch && " — most of the main parts are covered"}
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
                   Just need: {pantryMatch.missing.map((m) => m.name).join(", ")}
