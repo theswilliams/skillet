@@ -4,6 +4,8 @@ import { serializeRecipe } from "@/lib/serialize";
 import { filterRecipes } from "@/lib/services/query";
 import { interpretQuery } from "@/lib/services/nlSearch";
 import { matchPantry } from "@/lib/services/pantry";
+import { getCurrentUserId } from "@/lib/currentUser";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
@@ -11,7 +13,8 @@ export async function GET(req: NextRequest) {
 
   const parsed = await interpretQuery(q);
 
-  const recipes = await prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } });
+  const userId = await getCurrentUserId();
+  const recipes = await prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } });
 
   let filtered = filterRecipes(recipes, {
     cuisines: parsed.cuisines.length ? parsed.cuisines : undefined,

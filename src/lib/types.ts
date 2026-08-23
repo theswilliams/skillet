@@ -23,6 +23,7 @@ export type RecipeDTO = {
   emoji: string;
   hue: number;
   imageUrl: string | null;
+  sourceUrl: string | null;
   instructions: string[];
   prepMinutes: number;
   cookMinutes: number;
@@ -130,6 +131,13 @@ export type PantryItemDTO = {
   name: string;
   category: string;
   slug: string;
+  expiresAt: string | null;
+};
+
+export type StoreComparisonDTO = {
+  comparison: { store: string; total: number }[];
+  cheapestStore: string | null;
+  itemCount: number;
 };
 
 export const CATEGORY_LABELS: Record<string, string> = {

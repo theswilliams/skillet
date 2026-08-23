@@ -25,6 +25,7 @@ model User {
   mealPlans    MealPlan[]
   pantry       PantryItem[]
   groceryLists GroceryList[]
+  importedRecipes Recipe[]
 }
 
 model UserPreferences {
@@ -56,6 +57,7 @@ model Ingredient {
   densityGPerMl    Float?
   substitutes      String             @default("") // csv of ingredient slugs
   isStaple         Boolean            @default(false) // salt, pepper, oil — assumed on hand
+  barcode          String?            @unique // UPC/EAN, resolved via Open Food Facts on scan
   recipeLinks      RecipeIngredient[]
   pantryItems      PantryItem[]
   groceryItems     GroceryListItem[]
@@ -102,6 +104,9 @@ model Recipe {
   dietaryTags  String             @default("") // csv
   equipment    String             @default("") // csv
   leftoverFriendly Boolean        @default(false)
+  sourceUrl        String?  // set when imported from an external recipe page
+  importedByUserId String?
+  importedBy       User?               @relation(fields: [importedByUserId], references: [id], onDelete: SetNull)
   ingredients  RecipeIngredient[]
   interactions RecipeInteraction[]
   saved        SavedRecipe[]
@@ -183,6 +188,7 @@ model PantryItem {
   ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   quantity     Float?
   unit         String?
+  expiresAt    DateTime?
   addedAt      DateTime   @default(now())
 
   @@unique([userId, ingredientId])

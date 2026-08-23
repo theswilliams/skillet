@@ -4,11 +4,26 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Spinner, EmptyState, SecondaryButton, PrimaryButton } from "@/components/ui";
 import { RecipeArt } from "@/components/RecipeArt";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import type { PantryItemDTO, RecipeDTO, PantryMatchDTO } from "@/lib/types";
 
 type RecipeWithMatch = RecipeDTO & { pantryMatch?: PantryMatchDTO };
 
 type Suggestion = { id: string; slug: string; name: string; category: string };
+
+function daysUntil(dateStr: string): number {
+  const ms = new Date(dateStr).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0);
+  return Math.round(ms / 86400000);
+}
+
+function expiryBadge(dateStr: string | null): { label: string; tone: "danger" | "warn" | "ok" } | null {
+  if (!dateStr) return null;
+  const days = daysUntil(dateStr);
+  if (days < 0) return { label: "Expired", tone: "danger" };
+  if (days === 0) return { label: "Today", tone: "danger" };
+  if (days <= 3) return { label: `${days}d left`, tone: "warn" };
+  return { label: `${days}d left`, tone: "ok" };
+}
 
 export default function PantryPage() {
   const [items, setItems] = useState<PantryItemDTO[] | null>(null);
@@ -17,6 +32,10 @@ export default function PantryPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [available, setAvailable] = useState<RecipeWithMatch[] | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [editingExpiryId, setEditingExpiryId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(() => {
@@ -74,6 +93,35 @@ export default function PantryPage() {
     load();
   }
 
+  async function setExpiry(id: string, dateValue: string) {
+    setEditingExpiryId(null);
+    await fetch(`/api/pantry/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresAt: dateValue || null }),
+    });
+    load();
+  }
+
+  async function handleBarcodeDetected(barcode: string) {
+    setScanBusy(true);
+    const res = await fetch("/api/pantry/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ barcode }),
+    });
+    const data = await res.json();
+    setScanBusy(false);
+    setShowScanner(false);
+    if (!res.ok) {
+      setScanMessage(data.message ?? "Couldn't add that item.");
+    } else {
+      setScanMessage(`Added "${data.item.name}" to your pantry.`);
+      load();
+    }
+    setTimeout(() => setScanMessage(null), 3000);
+  }
+
   async function showAvailable() {
     setShowFilter(true);
     const res = await fetch("/api/recipes?availability=majority").then((r) => r.json());
@@ -101,6 +149,12 @@ export default function PantryPage() {
           </div>
           <PrimaryButton onClick={showAvailable}>Use What I Have</PrimaryButton>
         </div>
+      </div>
+
+      <div className="mt-4 flex gap-2">
+        <SecondaryButton onClick={() => setShowScanner(true)} className="flex-1">
+          📷 Scan Barcode
+        </SecondaryButton>
       </div>
 
       <div className="relative mt-6">
@@ -131,17 +185,48 @@ export default function PantryPage() {
         <EmptyState icon="🥫" title="Your pantry is empty" subtitle="Add a few staples above to see what you can cook right now." />
       ) : (
         <div className="mt-6 flex flex-wrap gap-2">
-          {items.map((item) => (
-            <span
-              key={item.id}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-medium"
-            >
-              {item.name}
-              <button onClick={() => removeItem(item.id)} className="text-[var(--color-ink-soft)] hover:text-[var(--color-coral)]">
-                ✕
-              </button>
-            </span>
-          ))}
+          {items
+            .slice()
+            .sort((a, b) => {
+              if (a.expiresAt && b.expiresAt) return daysUntil(a.expiresAt) - daysUntil(b.expiresAt);
+              if (a.expiresAt) return -1;
+              if (b.expiresAt) return 1;
+              return 0;
+            })
+            .map((item) => {
+              const badge = expiryBadge(item.expiresAt);
+              const badgeColor =
+                badge?.tone === "danger" ? "bg-[var(--color-coral)] text-white" : badge?.tone === "warn" ? "bg-[var(--color-gold)] text-white" : "bg-[var(--color-mint-light)] text-[var(--color-mint)]";
+              return (
+                <span
+                  key={item.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-medium"
+                >
+                  {item.name}
+                  {badge && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeColor}`}>{badge.label}</span>}
+                  <button
+                    onClick={() => setEditingExpiryId(editingExpiryId === item.id ? null : item.id)}
+                    className="text-[var(--color-ink-soft)] hover:text-[var(--color-gold)]"
+                    title="Set expiration date"
+                  >
+                    📅
+                  </button>
+                  {editingExpiryId === item.id && (
+                    <input
+                      type="date"
+                      autoFocus
+                      defaultValue={item.expiresAt ? item.expiresAt.slice(0, 10) : ""}
+                      onBlur={(e) => setExpiry(item.id, e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && setExpiry(item.id, (e.target as HTMLInputElement).value)}
+                      className="w-32 rounded border border-[var(--color-line)] px-1 text-xs outline-none"
+                    />
+                  )}
+                  <button onClick={() => removeItem(item.id)} className="text-[var(--color-ink-soft)] hover:text-[var(--color-coral)]">
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
         </div>
       )}
 
@@ -188,6 +273,27 @@ export default function PantryPage() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={handleBarcodeDetected}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {scanBusy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="rounded-2xl bg-white p-6">
+            <Spinner className="h-6 w-6 text-[var(--color-coral)]" />
+          </div>
+        </div>
+      )}
+
+      {scanMessage && (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-white md:bottom-6">
+          {scanMessage}
         </div>
       )}
     </div>

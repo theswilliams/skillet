@@ -6,6 +6,7 @@ import { buildTasteProfile } from "@/lib/services/recommend";
 import { calculateIngredientEfficiency } from "@/lib/services/efficiency";
 import { scaledIngredientCost } from "@/lib/services/cost";
 import { serializeRecipe } from "@/lib/serialize";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
 
   const [prefs, recipes, interactions] = await Promise.all([
     prisma.userPreferences.upsert({ where: { userId }, update: {}, create: { userId } }),
-    prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } }),
+    prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } }),
     prisma.recipeInteraction.findMany({ where: { userId } }),
   ]);
 

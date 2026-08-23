@@ -6,6 +6,7 @@ import { buildTasteProfile, rankForDiscovery } from "@/lib/services/recommend";
 import { calculateIngredientEfficiency } from "@/lib/services/efficiency";
 import { countMakeableRecipes } from "@/lib/services/pantry";
 import { recipeCost } from "@/lib/services/cost";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 function startOfWeek(d = new Date()) {
   const date = new Date(d);
@@ -21,7 +22,7 @@ export async function GET() {
   const userId = user.id;
 
   const [recipes, interactions, pantry, plan] = await Promise.all([
-    prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } }),
+    prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } }),
     prisma.recipeInteraction.findMany({ where: { userId } }),
     prisma.pantryItem.findMany({ where: { userId }, include: { ingredient: true } }),
     prisma.mealPlan.findFirst({

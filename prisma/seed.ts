@@ -11,6 +11,7 @@ import { RECIPES_8 } from "./data/recipes8";
 import { RECIPES_9 } from "./data/recipes9";
 import { RECIPES_10 } from "./data/recipes10";
 import { RECIPE_IMAGES } from "./data/images";
+import { GROCERY_STORES, mockStorePrice } from "../src/lib/services/pricing";
 
 const RECIPES = [
   ...RECIPES_BASE,
@@ -59,6 +60,23 @@ async function main() {
   const ingredientBySlug = new Map(
     (await prisma.ingredient.findMany()).map((i) => [i.slug, i]),
   );
+
+  console.log(`Seeding mock store prices for ${GROCERY_STORES.length} stores...`);
+  for (const ing of ingredientBySlug.values()) {
+    for (const store of GROCERY_STORES) {
+      const price = mockStorePrice(ing, store);
+      const existing = await prisma.ingredientPrice.findFirst({
+        where: { ingredientId: ing.id, source: "mock-store", store },
+      });
+      if (existing) {
+        await prisma.ingredientPrice.update({ where: { id: existing.id }, data: { pricePerBaseUnit: price } });
+      } else {
+        await prisma.ingredientPrice.create({
+          data: { ingredientId: ing.id, source: "mock-store", store, pricePerBaseUnit: price },
+        });
+      }
+    }
+  }
 
   console.log(`Seeding ${RECIPES.length} recipes...`);
   for (const r of RECIPES) {

@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Spinner, EmptyState, SecondaryButton, PrimaryButton, SectionCard } from "@/components/ui";
-import { CATEGORY_LABELS, CATEGORY_ICONS, type GroceryListDTO, type GroceryItemDTO } from "@/lib/types";
+import { CATEGORY_LABELS, CATEGORY_ICONS, type GroceryListDTO, type GroceryItemDTO, type StoreComparisonDTO } from "@/lib/types";
 
 export default function GroceryPage() {
   const [list, setList] = useState<GroceryListDTO | null | undefined>(undefined);
   const [regenerating, setRegenerating] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [storeComparison, setStoreComparison] = useState<StoreComparisonDTO | null>(null);
+  const [showStores, setShowStores] = useState(false);
 
   const load = useCallback(() => {
     fetch("/api/grocery-list")
@@ -49,6 +51,14 @@ export default function GroceryPage() {
     setList((l) => l && { ...l, items: l.items.filter((i) => i.id !== id) });
     await fetch(`/api/grocery-list/item/${id}`, { method: "DELETE" });
     load();
+  }
+
+  async function toggleStoreComparison() {
+    if (!showStores) {
+      const res = await fetch(`/api/grocery-list/compare-stores?listId=${list?.id}`).then((r) => r.json());
+      setStoreComparison(res);
+    }
+    setShowStores((s) => !s);
   }
 
   async function addCustomItem() {
@@ -110,6 +120,41 @@ export default function GroceryPage() {
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-line)]">
           <div className="h-full rounded-full bg-[var(--color-mint)] transition-all" style={{ width: `${pct}%` }} />
         </div>
+        <button onClick={toggleStoreComparison} className="mt-3 text-xs font-bold text-[var(--color-coral)] underline underline-offset-2">
+          {showStores ? "Hide store comparison" : "🏪 Compare prices across stores"}
+        </button>
+        {showStores && (
+          <div className="mt-3 border-t border-[var(--color-line)] pt-3">
+            {!storeComparison ? (
+              <div className="flex justify-center py-4">
+                <Spinner className="h-5 w-5 text-[var(--color-coral)]" />
+              </div>
+            ) : (
+              <>
+                <p className="mb-2 text-[11px] text-[var(--color-ink-soft)]">
+                  Estimated total for your unchecked items at each store. Store pricing is modeled from typical category
+                  positioning, not a live feed — see Terms for details.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {storeComparison.comparison.map((c) => (
+                    <div
+                      key={c.store}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
+                        c.store === storeComparison.cheapestStore ? "bg-[var(--color-mint-light)] font-bold text-[var(--color-mint)]" : "bg-[var(--color-cream)]"
+                      }`}
+                    >
+                      <span>
+                        {c.store === storeComparison.cheapestStore && "🏆 "}
+                        {c.store}
+                      </span>
+                      <span>${c.total.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </SectionCard>
 
       <div className="mt-4 flex gap-2">

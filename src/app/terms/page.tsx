@@ -33,6 +33,29 @@ export default function TermsPage() {
       </section>
 
       <section className="mt-6">
+        <h2 className="text-lg font-bold">Store price comparison</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+          The per-store totals shown when comparing grocery prices (Walmart, No Frills, Loblaws,
+          Sobeys, Costco) are modeled from each chain&apos;s typical category pricing — not a live
+          feed from those retailers. Real store APIs require paid partnerships Skillet doesn&apos;t
+          have yet. Treat the comparison as a directional guide to which store tends to run
+          cheaper, not an exact quote.
+        </p>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-bold">Importing recipes from other sites</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+          When you import a recipe from a URL, Skillet reads that page&apos;s structured recipe
+          data (the same machine-readable format sites publish for search engines) to fill in
+          ingredients and steps for your own use — it doesn&apos;t copy the site&apos;s written
+          description or story. Imported recipes are private to your account and always link back
+          to the original source. Only import recipes you have the right to use personally, and
+          respect the original site&apos;s terms.
+        </p>
+      </section>
+
+      <section className="mt-6">
         <h2 className="text-lg font-bold">Nutrition information</h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
           Calorie, protein, carb, and fat values are estimates and shouldn&apos;t be treated as

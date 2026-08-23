@@ -3,12 +3,13 @@ import { prisma } from "@/lib/db";
 import { serializeRecipe } from "@/lib/serialize";
 import { getCurrentUserId } from "@/lib/currentUser";
 import { buildTasteProfile, rankForDiscovery } from "@/lib/services/recommend";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 export async function GET() {
   const userId = await getCurrentUserId();
 
   const [recipes, interactions] = await Promise.all([
-    prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } }),
+    prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } }),
     prisma.recipeInteraction.findMany({ where: { userId } }),
   ]);
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { RecipeArt } from "@/components/RecipeArt";
-import { Chip, EmptyState, Spinner } from "@/components/ui";
+import { Chip, EmptyState, Spinner, PrimaryButton, SecondaryButton } from "@/components/ui";
 import Link from "next/link";
 import type { RecipeDTO } from "@/lib/types";
 
@@ -23,6 +24,8 @@ const COST_OPTIONS = [
 ];
 
 export default function SearchPage() {
+  const router = useRouter();
+  const [showImport, setShowImport] = useState(false);
   const [q, setQ] = useState("");
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [protein, setProtein] = useState<string | null>(null);
@@ -67,7 +70,15 @@ export default function SearchPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-10 pt-6 sm:px-6">
-      <h1 className="text-xl font-extrabold tracking-tight">Search</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-extrabold tracking-tight">Search</h1>
+        <button
+          onClick={() => setShowImport(true)}
+          className="text-xs font-bold text-[var(--color-coral)] underline underline-offset-2"
+        >
+          🔗 Import from URL
+        </button>
+      </div>
       <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[var(--color-line)] bg-white px-4 py-3">
         <span className="text-[var(--color-ink-soft)]">🔍</span>
         <input
@@ -129,6 +140,70 @@ export default function SearchPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {showImport && (
+        <ImportRecipeModal
+          onClose={() => setShowImport(false)}
+          onImported={(slug) => router.push(`/recipe/${slug}`)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ImportRecipeModal({ onClose, onImported }: { onClose: () => void; onImported: (slug: string) => void }) {
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!url.trim()) return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/recipes/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url.trim() }),
+    });
+    const data = await res.json();
+    setBusy(false);
+    if (!res.ok) {
+      setError(data.error ?? "Couldn't import that recipe.");
+      return;
+    }
+    onImported(data.recipe.slug);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-white p-5 md:rounded-3xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">Import from URL</h3>
+          <button onClick={onClose} className="text-xl text-[var(--color-ink-soft)]">
+            ✕
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+          Paste a link to a recipe page. Works with most recipe sites that publish structured recipe data — not every
+          site does, and social media posts generally aren&apos;t supported yet.
+        </p>
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="https://example.com/some-recipe"
+          className="mt-4 w-full rounded-xl border border-[var(--color-line)] px-4 py-3 text-sm outline-none focus:border-[var(--color-coral)]"
+        />
+        {error && <p className="mt-2 text-sm text-[var(--color-coral)]">{error}</p>}
+        <div className="mt-4 flex gap-2">
+          <SecondaryButton onClick={onClose} className="flex-1">
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton onClick={submit} disabled={busy || !url.trim()} className="flex-1">
+            {busy ? "Importing…" : "Import"}
+          </PrimaryButton>
+        </div>
       </div>
     </div>
   );

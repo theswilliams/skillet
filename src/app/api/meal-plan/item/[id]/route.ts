@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
 import { suggestReplacement } from "@/lib/services/planner";
 import { buildTasteProfile } from "@/lib/services/recommend";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -45,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.action === "replace") {
     const [prefs, allRecipes, interactions] = await Promise.all([
       prisma.userPreferences.upsert({ where: { userId }, update: {}, create: { userId } }),
-      prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } }),
+      prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } }),
       prisma.recipeInteraction.findMany({ where: { userId } }),
     ]);
     const recipesById = new Map(allRecipes.map((r) => [r.id, r]));

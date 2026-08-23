@@ -113,6 +113,16 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
         </div>
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight">{recipe.name}</h1>
         <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{recipe.description}</p>
+        {recipe.sourceUrl && (
+          <a
+            href={recipe.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-xs font-semibold text-[var(--color-coral)] underline underline-offset-2"
+          >
+            🔗 Imported from {new URL(recipe.sourceUrl).hostname.replace(/^www\./, "")}
+          </a>
+        )}
 
         <div className="mt-5 grid grid-cols-4 gap-2 text-center">
           <Stat label="Prep" value={`${recipe.prepMinutes}m`} />

@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
 import { countMakeableRecipes, countMajorityMatchRecipes } from "@/lib/services/pantry";
+import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 export async function GET() {
   const userId = await getCurrentUserId();
   const [items, recipes] = await Promise.all([
     prisma.pantryItem.findMany({ where: { userId }, include: { ingredient: true }, orderBy: { addedAt: "desc" } }),
-    prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } }),
+    prisma.recipe.findMany({ where: visibleRecipesWhere(userId), include: { ingredients: { include: { ingredient: true } } } }),
   ]);
 
   const pantryIds = new Set(items.map((i) => i.ingredientId));
@@ -21,6 +22,7 @@ export async function GET() {
       name: i.ingredient.name,
       category: i.ingredient.category,
       slug: i.ingredient.slug,
+      expiresAt: i.expiresAt,
     })),
     makeableCount,
     majorityMatchCount,
@@ -28,10 +30,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { ingredientId, ingredientSlug, name } = (await req.json()) as {
+  const { ingredientId, ingredientSlug, name, expiresAt } = (await req.json()) as {
     ingredientId?: string;
     ingredientSlug?: string;
     name?: string;
+    expiresAt?: string;
   };
   const userId = await getCurrentUserId();
 
@@ -51,14 +54,23 @@ export async function POST(req: NextRequest) {
 
   if (!ingredient) return NextResponse.json({ error: "Ingredient not found" }, { status: 400 });
 
+  const parsedExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+
   const item = await prisma.pantryItem.upsert({
     where: { userId_ingredientId: { userId, ingredientId: ingredient.id } },
-    update: {},
-    create: { userId, ingredientId: ingredient.id },
+    update: parsedExpiresAt ? { expiresAt: parsedExpiresAt } : {},
+    create: { userId, ingredientId: ingredient.id, expiresAt: parsedExpiresAt },
     include: { ingredient: true },
   });
 
   return NextResponse.json({
-    item: { id: item.id, ingredientId: item.ingredientId, name: item.ingredient.name, category: item.ingredient.category, slug: item.ingredient.slug },
+    item: {
+      id: item.id,
+      ingredientId: item.ingredientId,
+      name: item.ingredient.name,
+      category: item.ingredient.category,
+      slug: item.ingredient.slug,
+      expiresAt: item.expiresAt,
+    },
   });
 }
