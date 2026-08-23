@@ -1,0 +1,209 @@
+// Skillet — personal food optimizer
+// SQLite for local dev; swap `provider` to "postgresql" for production —
+// no model changes required (no SQLite-only types are used).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String?             @unique
+  name         String?
+  createdAt    DateTime            @default(now())
+  preferences  UserPreferences?
+  interactions RecipeInteraction[]
+  saved        SavedRecipe[]
+  mealPlans    MealPlan[]
+  pantry       PantryItem[]
+  groceryLists GroceryList[]
+}
+
+model UserPreferences {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  householdSize       Int     @default(2)
+  weeklyBudget        Float   @default(120)
+  currency            String  @default("CAD")
+  region              String  @default("CA-ON")
+  mealsPerDay         Int     @default(1)
+  maxCookTime         Int     @default(45)
+  dietaryTags         String  @default("") // csv
+  dislikedIngredients String  @default("") // csv of ingredient slugs
+  favoriteCuisines    String  @default("") // csv
+  equipment           String  @default("") // csv
+  mealPrepLevel       String  @default("moderate") // none | moderate | high
+  onboardingComplete  Boolean @default(false)
+}
+
+model Ingredient {
+  id               String             @id @default(cuid())
+  slug             String             @unique
+  name             String
+  category         String // produce | meat | dairy | pantry | frozen | bakery | other
+  baseUnit         String // g | ml | unit
+  pricePerBaseUnit Float // in the seed currency (CAD)
+  packSize         Float? // typical purchasable pack, in base units
+  densityGPerMl    Float?
+  substitutes      String             @default("") // csv of ingredient slugs
+  isStaple         Boolean            @default(false) // salt, pepper, oil — assumed on hand
+  recipeLinks      RecipeIngredient[]
+  pantryItems      PantryItem[]
+  groceryItems     GroceryListItem[]
+  prices           IngredientPrice[]
+}
+
+/// Pricing abstraction: many sources can price the same ingredient.
+/// Resolution order is handled in lib/pricing.ts (user > store > region > seed).
+model IngredientPrice {
+  id               String     @id @default(cuid())
+  ingredientId     String
+  ingredient       Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  source           String // seed | user | store | api
+  store            String?
+  region           String     @default("CA-ON")
+  currency         String     @default("CAD")
+  pricePerBaseUnit Float
+  updatedAt        DateTime   @updatedAt
+
+  @@index([ingredientId, source])
+}
+
+model Recipe {
+  id           String             @id @default(cuid())
+  slug         String             @unique
+  name         String
+  description  String
+  imageUrl     String?
+  emoji        String             @default("🍽️")
+  hue          Int                @default(20) // drives the generated card art
+  instructions String // JSON string[]
+  prepMinutes  Int
+  cookMinutes  Int
+  totalMinutes Int
+  servings     Int
+  calories     Int?
+  protein      Float?
+  carbs        Float?
+  fat          Float?
+  cuisine      String
+  mealType     String // dinner | lunch | breakfast | snack
+  difficulty   String // easy | medium | advanced
+  proteinType  String // chicken | beef | pork | fish | seafood | vegetarian | vegan | other
+  dietaryTags  String             @default("") // csv
+  equipment    String             @default("") // csv
+  leftoverFriendly Boolean        @default(false)
+  ingredients  RecipeIngredient[]
+  interactions RecipeInteraction[]
+  saved        SavedRecipe[]
+  planItems    MealPlanItem[]
+}
+
+model RecipeIngredient {
+  id           String     @id @default(cuid())
+  recipeId     String
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantity     Float
+  unit         String
+  preparation  String?
+  optional     Boolean    @default(false)
+  isPrimary    Boolean    @default(false)
+
+  @@unique([recipeId, ingredientId])
+}
+
+model MealPlan {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String         @default("This Week")
+  weekStart   DateTime
+  budget      Float
+  householdSize Int          @default(2)
+  createdAt   DateTime       @default(now())
+  items       MealPlanItem[]
+  groceryLists GroceryList[]
+}
+
+model MealPlanItem {
+  id         String   @id @default(cuid())
+  mealPlanId String
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  recipeId   String
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  dayIndex   Int // 0 = Monday
+  slot       String   @default("dinner")
+  servings   Int      @default(2)
+  cooked     Boolean  @default(false)
+}
+
+model GroceryList {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealPlanId String?
+  mealPlan   MealPlan?         @relation(fields: [mealPlanId], references: [id], onDelete: SetNull)
+  createdAt  DateTime          @default(now())
+  items      GroceryListItem[]
+}
+
+model GroceryListItem {
+  id            String      @id @default(cuid())
+  groceryListId String
+  groceryList   GroceryList @relation(fields: [groceryListId], references: [id], onDelete: Cascade)
+  ingredientId  String?
+  ingredient    Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+  name          String
+  category      String      @default("other")
+  quantity      Float
+  unit          String
+  estimatedCost Float       @default(0)
+  checked       Boolean     @default(false)
+  custom        Boolean     @default(false)
+  usedInRecipes String      @default("") // csv of recipe names
+  havePantry    Boolean     @default(false)
+}
+
+model PantryItem {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantity     Float?
+  unit         String?
+  addedAt      DateTime   @default(now())
+
+  @@unique([userId, ingredientId])
+}
+
+model RecipeInteraction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  type      String // liked | disliked | saved | unsaved | cooked | skipped | planned | viewed
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
+}
+
+model SavedRecipe {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+}

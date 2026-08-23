@@ -1,0 +1,162 @@
+import { PrismaClient } from "@prisma/client";
+import { INGREDIENTS } from "./data/ingredients";
+import { RECIPES } from "./data/recipes";
+
+const prisma = new PrismaClient();
+
+function slugifyName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+async function main() {
+  console.log(`Seeding ${INGREDIENTS.length} ingredients...`);
+  for (const ing of INGREDIENTS) {
+    await prisma.ingredient.upsert({
+      where: { slug: ing.slug },
+      update: {
+        name: ing.name,
+        category: ing.category,
+        baseUnit: ing.baseUnit,
+        pricePerBaseUnit: ing.price,
+        isStaple: ing.staple ?? false,
+        substitutes: (ing.subs ?? []).join(","),
+      },
+      create: {
+        slug: ing.slug,
+        name: ing.name,
+        category: ing.category,
+        baseUnit: ing.baseUnit,
+        pricePerBaseUnit: ing.price,
+        isStaple: ing.staple ?? false,
+        substitutes: (ing.subs ?? []).join(","),
+      },
+    });
+  }
+
+  const ingredientBySlug = new Map(
+    (await prisma.ingredient.findMany()).map((i) => [i.slug, i]),
+  );
+
+  console.log(`Seeding ${RECIPES.length} recipes...`);
+  for (const r of RECIPES) {
+    const totalMinutes = r.prepMinutes + r.cookMinutes;
+    const recipe = await prisma.recipe.upsert({
+      where: { slug: r.slug },
+      update: {
+        name: r.name,
+        description: r.description,
+        emoji: r.emoji,
+        hue: r.hue,
+        instructions: JSON.stringify(r.instructions),
+        prepMinutes: r.prepMinutes,
+        cookMinutes: r.cookMinutes,
+        totalMinutes,
+        servings: r.servings,
+        calories: r.calories,
+        protein: r.protein,
+        carbs: r.carbs,
+        fat: r.fat,
+        cuisine: r.cuisine,
+        mealType: r.mealType,
+        difficulty: r.difficulty,
+        proteinType: r.proteinType,
+        dietaryTags: r.dietaryTags.join(","),
+        equipment: r.equipment.join(","),
+        leftoverFriendly: r.leftoverFriendly ?? false,
+      },
+      create: {
+        slug: r.slug,
+        name: r.name,
+        description: r.description,
+        emoji: r.emoji,
+        hue: r.hue,
+        instructions: JSON.stringify(r.instructions),
+        prepMinutes: r.prepMinutes,
+        cookMinutes: r.cookMinutes,
+        totalMinutes,
+        servings: r.servings,
+        calories: r.calories,
+        protein: r.protein,
+        carbs: r.carbs,
+        fat: r.fat,
+        cuisine: r.cuisine,
+        mealType: r.mealType,
+        difficulty: r.difficulty,
+        proteinType: r.proteinType,
+        dietaryTags: r.dietaryTags.join(","),
+        equipment: r.equipment.join(","),
+        leftoverFriendly: r.leftoverFriendly ?? false,
+      },
+    });
+
+    // Reset ingredient links so re-seeding is idempotent
+    await prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
+    for (const ri of r.ingredients) {
+      const ingredient = ingredientBySlug.get(ri.slug);
+      if (!ingredient) {
+        throw new Error(`Unknown ingredient slug "${ri.slug}" in recipe "${r.slug}"`);
+      }
+      await prisma.recipeIngredient.create({
+        data: {
+          recipeId: recipe.id,
+          ingredientId: ingredient.id,
+          quantity: ri.quantity,
+          unit: ri.unit,
+          preparation: ri.prep,
+          optional: ri.optional ?? false,
+          isPrimary: ri.primary ?? false,
+        },
+      });
+    }
+  }
+
+  // Demo user with sensible defaults for a first-run experience
+  const demoEmail = "demo@skillet.app";
+  const user = await prisma.user.upsert({
+    where: { email: demoEmail },
+    update: {},
+    create: {
+      email: demoEmail,
+      name: "Demo",
+      preferences: {
+        create: {
+          householdSize: 2,
+          weeklyBudget: 75,
+          currency: "CAD",
+          region: "CA-ON",
+          mealsPerDay: 1,
+          maxCookTime: 45,
+          favoriteCuisines: "Mexican,Italian,Chinese",
+          dietaryTags: "",
+          dislikedIngredients: "",
+          equipment: "oven,one-pan",
+          mealPrepLevel: "moderate",
+          onboardingComplete: true,
+        },
+      },
+    },
+  });
+
+  // Seed a starter pantry so "Use What I Have" has something to show
+  const starterPantry = ["chicken-breast", "rice-white", "eggs", "soy-sauce", "broccoli", "onion", "garlic", "olive-oil"];
+  for (const slug of starterPantry) {
+    const ingredient = ingredientBySlug.get(slug);
+    if (!ingredient) continue;
+    await prisma.pantryItem.upsert({
+      where: { userId_ingredientId: { userId: user.id, ingredientId: ingredient.id } },
+      update: {},
+      create: { userId: user.id, ingredientId: ingredient.id },
+    });
+  }
+
+  console.log(`Seed complete. Demo user id: ${user.id}`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
