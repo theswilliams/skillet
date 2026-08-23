@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
-import { countMakeableRecipes } from "@/lib/services/pantry";
+import { countMakeableRecipes, countMajorityMatchRecipes } from "@/lib/services/pantry";
 
 export async function GET() {
   const userId = await getCurrentUserId();
@@ -12,6 +12,7 @@ export async function GET() {
 
   const pantryIds = new Set(items.map((i) => i.ingredientId));
   const makeableCount = countMakeableRecipes(recipes, pantryIds);
+  const majorityMatchCount = countMajorityMatchRecipes(recipes, pantryIds);
 
   return NextResponse.json({
     items: items.map((i) => ({
@@ -22,6 +23,7 @@ export async function GET() {
       slug: i.ingredient.slug,
     })),
     makeableCount,
+    majorityMatchCount,
   });
 }
 

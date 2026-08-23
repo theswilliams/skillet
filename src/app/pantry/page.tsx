@@ -4,17 +4,19 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Spinner, EmptyState, SecondaryButton, PrimaryButton } from "@/components/ui";
 import { RecipeArt } from "@/components/RecipeArt";
-import type { PantryItemDTO, RecipeDTO } from "@/lib/types";
+import type { PantryItemDTO, RecipeDTO, PantryMatchDTO } from "@/lib/types";
+
+type RecipeWithMatch = RecipeDTO & { pantryMatch?: PantryMatchDTO };
 
 type Suggestion = { id: string; slug: string; name: string; category: string };
 
 export default function PantryPage() {
   const [items, setItems] = useState<PantryItemDTO[] | null>(null);
-  const [makeableCount, setMakeableCount] = useState(0);
+  const [majorityMatchCount, setMajorityMatchCount] = useState(0);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showFilter, setShowFilter] = useState(false);
-  const [available, setAvailable] = useState<RecipeDTO[] | null>(null);
+  const [available, setAvailable] = useState<RecipeWithMatch[] | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(() => {
@@ -22,7 +24,7 @@ export default function PantryPage() {
       .then((r) => r.json())
       .then((d) => {
         setItems(d.items);
-        setMakeableCount(d.makeableCount);
+        setMajorityMatchCount(d.majorityMatchCount);
       });
   }, []);
 
@@ -74,7 +76,7 @@ export default function PantryPage() {
 
   async function showAvailable() {
     setShowFilter(true);
-    const res = await fetch("/api/recipes?availability=have").then((r) => r.json());
+    const res = await fetch("/api/recipes?availability=majority").then((r) => r.json());
     setAvailable(res.recipes);
   }
 
@@ -94,8 +96,8 @@ export default function PantryPage() {
       <div className="mt-4 rounded-2xl border border-[var(--color-line)] bg-[var(--color-card)] card-shadow p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-extrabold">{makeableCount}</p>
-            <p className="text-xs font-semibold text-[var(--color-ink-soft)]">recipes you can make right now</p>
+            <p className="text-2xl font-extrabold">{majorityMatchCount}</p>
+            <p className="text-xs font-semibold text-[var(--color-ink-soft)]">recipes within reach right now</p>
           </div>
           <PrimaryButton onClick={showAvailable}>Use What I Have</PrimaryButton>
         </div>
@@ -147,28 +149,38 @@ export default function PantryPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center" onClick={() => setShowFilter(false)}>
           <div onClick={(e) => e.stopPropagation()} className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-t-3xl bg-white p-4 md:rounded-3xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Recipes you can make</h3>
+              <h3 className="text-lg font-bold">Recipes Within Reach</h3>
               <button onClick={() => setShowFilter(false)} className="text-xl text-[var(--color-ink-soft)]">
                 ✕
               </button>
             </div>
+            <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+              Includes recipes where you have most of the main ingredients — protein, starch and the like — even if a spice or extra is missing.
+            </p>
             <div className="mt-3 flex-1 overflow-y-auto">
               {!available ? (
                 <div className="flex justify-center py-10">
                   <Spinner className="h-6 w-6 text-[var(--color-coral)]" />
                 </div>
               ) : available.length === 0 ? (
-                <EmptyState icon="🍳" title="Nothing fully matches yet" subtitle="Add a few more pantry staples." />
+                <EmptyState icon="🍳" title="Nothing within reach yet" subtitle="Add a few more pantry staples, especially proteins and starches." />
               ) : (
                 <div className="flex flex-col divide-y divide-[var(--color-line)]">
                   {available.map((r) => (
                     <Link key={r.id} href={`/recipe/${r.slug}`} className="flex items-center gap-3 py-2.5">
                       <RecipeArt hue={r.hue} emoji={r.emoji} imageUrl={r.imageUrl} size="sm" className="h-12 w-12 shrink-0 rounded-lg" />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold">{r.name}</p>
                         <p className="text-xs text-[var(--color-ink-soft)]">
                           {r.totalMinutes}m · ${r.costPerServing.toFixed(2)}/serving
                         </p>
+                        {r.pantryMatch && (
+                          <p className={`text-xs font-medium ${r.pantryMatch.canMake ? "text-[var(--color-mint)]" : "text-[var(--color-gold)]"}`}>
+                            {r.pantryMatch.canMake
+                              ? "You have everything"
+                              : `Missing: ${r.pantryMatch.missing.map((m) => m.name).join(", ")}`}
+                          </p>
+                        )}
                       </div>
                     </Link>
                   ))}

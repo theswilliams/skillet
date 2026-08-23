@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { serializeRecipe } from "@/lib/serialize";
 import { filterRecipes } from "@/lib/services/query";
+import { rankByMajorityMatch } from "@/lib/services/pantry";
 import { getCurrentUserId } from "@/lib/currentUser";
 
 export async function GET(req: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
   const recipes = await prisma.recipe.findMany({ include: { ingredients: { include: { ingredient: true } } } });
 
   let pantryIngredientIds: Set<string> | undefined;
-  const availability = params.get("availability") as "have" | "one-missing" | "two-missing" | null;
+  const availability = params.get("availability") as "have" | "one-missing" | "two-missing" | "majority" | null;
   if (availability) {
     const userId = await getCurrentUserId();
     const pantry = await prisma.pantryItem.findMany({ where: { userId } });
@@ -32,6 +33,15 @@ export async function GET(req: NextRequest) {
     availability: availability ?? undefined,
     pantryIngredientIds,
   });
+
+  // Rank "majority" results best-match-first (fully makeable recipes surface
+  // above partial matches) instead of leaving them in catalogue order.
+  if (availability === "majority" && pantryIngredientIds) {
+    const ranked = rankByMajorityMatch(filtered, pantryIngredientIds);
+    return NextResponse.json({
+      recipes: ranked.map((r) => ({ ...serializeRecipe(r), pantryMatch: r.pantryMatch })),
+    });
+  }
 
   return NextResponse.json({ recipes: filtered.map(serializeRecipe) });
 }

@@ -17,7 +17,14 @@ export type RecipeFilters = {
   maxMinutes?: number;
   minMinutes?: number;
   maxCostPerServing?: number;
-  availability?: "have" | "one-missing" | "two-missing"; // requires pantryIds
+  /**
+   * "have"/"one-missing"/"two-missing" count every missing non-staple
+   * ingredient. "majority" is looser: it passes once the user holds most of
+   * the recipe's main components (protein, starch, etc. — see
+   * matchPantry's majorityMatch), even if a spice or minor extra is missing.
+   * All require pantryIngredientIds.
+   */
+  availability?: "have" | "one-missing" | "two-missing" | "majority";
   pantryIngredientIds?: Set<string>;
 };
 
@@ -81,8 +88,15 @@ export function filterRecipes(recipes: RecipeWithIngredients[], filters: RecipeF
   }
 
   if (filters.availability && filters.pantryIngredientIds) {
-    const maxMissing = filters.availability === "have" ? 0 : filters.availability === "one-missing" ? 1 : 2;
-    result = result.filter((r) => matchPantry(r, filters.pantryIngredientIds!).missing.length <= maxMissing);
+    if (filters.availability === "majority") {
+      result = result.filter((r) => {
+        const match = matchPantry(r, filters.pantryIngredientIds!);
+        return match.canMake || match.majorityMatch;
+      });
+    } else {
+      const maxMissing = filters.availability === "have" ? 0 : filters.availability === "one-missing" ? 1 : 2;
+      result = result.filter((r) => matchPantry(r, filters.pantryIngredientIds!).missing.length <= maxMissing);
+    }
   }
 
   return result;
