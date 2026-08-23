@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Chip, SecondaryButton, Spinner, SectionCard } from "@/components/ui";
 import { RecipeRow } from "@/components/RecipeCard";
 import type { PreferencesDTO, RecipeDTO } from "@/lib/types";
@@ -167,6 +168,12 @@ export default function ProfilePage() {
 
       <div className="mt-8">
         <RecipeRow title="Saved Recipes" recipes={saved ?? []} emptyText="Save recipes from Discover or Search to see them here." />
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <Link href="/terms" className="text-xs font-semibold text-[var(--color-ink-soft)] underline underline-offset-4">
+          Terms of Service
+        </Link>
       </div>
     </div>
   );
