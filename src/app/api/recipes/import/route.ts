@@ -19,7 +19,7 @@ async function findOrCreateIngredient(name: string) {
   if (!lower) return null;
 
   const existing = await prisma.ingredient.findFirst({
-    where: { name: { contains: lower } },
+    where: { name: { contains: lower, mode: "insensitive" } },
   });
   if (existing) return existing;
 
