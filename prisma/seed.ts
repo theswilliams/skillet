@@ -1,7 +1,29 @@
 import { PrismaClient } from "@prisma/client";
 import { INGREDIENTS } from "./data/ingredients";
-import { RECIPES } from "./data/recipes";
+import { RECIPES as RECIPES_BASE } from "./data/recipes";
+import { RECIPES_2 } from "./data/recipes2";
+import { RECIPES_3 } from "./data/recipes3";
+import { RECIPES_4 } from "./data/recipes4";
+import { RECIPES_5 } from "./data/recipes5";
+import { RECIPES_6 } from "./data/recipes6";
+import { RECIPES_7 } from "./data/recipes7";
+import { RECIPES_8 } from "./data/recipes8";
+import { RECIPES_9 } from "./data/recipes9";
+import { RECIPES_10 } from "./data/recipes10";
 import { RECIPE_IMAGES } from "./data/images";
+
+const RECIPES = [
+  ...RECIPES_BASE,
+  ...RECIPES_2,
+  ...RECIPES_3,
+  ...RECIPES_4,
+  ...RECIPES_5,
+  ...RECIPES_6,
+  ...RECIPES_7,
+  ...RECIPES_8,
+  ...RECIPES_9,
+  ...RECIPES_10,
+];
 
 const prisma = new PrismaClient();
 

@@ -6,7 +6,7 @@ import { Chip, EmptyState, Spinner } from "@/components/ui";
 import Link from "next/link";
 import type { RecipeDTO } from "@/lib/types";
 
-const CUISINES = ["Italian", "Mexican", "Chinese", "Japanese", "Korean", "Thai", "Indian", "Mediterranean", "American"];
+const CUISINES = ["Italian", "Mexican", "Chinese", "Japanese", "Korean", "Thai", "Indian", "Mediterranean", "American", "French", "Spanish", "Vietnamese", "Filipino", "Caribbean", "African", "German", "Brazilian"];
 const PROTEINS = ["chicken", "beef", "pork", "fish", "seafood", "vegetarian", "vegan"];
 const EQUIPMENT = ["one-pan", "oven", "slow-cooker", "bbq"];
 const DIETARY = ["high-protein", "low-carb", "vegetarian", "vegan", "gluten-free", "dairy-free"];

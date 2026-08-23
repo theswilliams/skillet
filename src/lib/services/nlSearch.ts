@@ -25,7 +25,8 @@ export type ParsedQuery = {
 
 const CUISINES = [
   "italian", "mexican", "chinese", "japanese", "korean", "thai", "indian",
-  "mediterranean", "american",
+  "mediterranean", "american", "french", "spanish", "vietnamese", "filipino",
+  "caribbean", "african", "german", "brazilian",
 ];
 
 const PROTEINS = ["chicken", "beef", "pork", "fish", "seafood", "vegetarian", "vegan", "shrimp", "tofu"];

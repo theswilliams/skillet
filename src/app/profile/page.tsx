@@ -6,7 +6,7 @@ import { Chip, SecondaryButton, Spinner, SectionCard } from "@/components/ui";
 import { RecipeRow } from "@/components/RecipeCard";
 import type { PreferencesDTO, RecipeDTO } from "@/lib/types";
 
-const CUISINES = ["Italian", "Mexican", "Chinese", "Japanese", "Korean", "Thai", "Indian", "Mediterranean", "American"];
+const CUISINES = ["Italian", "Mexican", "Chinese", "Japanese", "Korean", "Thai", "Indian", "Mediterranean", "American", "French", "Spanish", "Vietnamese", "Filipino", "Caribbean", "African", "German", "Brazilian"];
 const DIETARY = ["vegetarian", "vegan", "gluten-free", "dairy-free", "high-protein", "low-carb"];
 const EQUIPMENT = [
   { value: "one-pan", label: "One Pan" },

@@ -8,9 +8,31 @@
  * This runs once at dev time, not at request time or seed time — seeding
  * stays deterministic and offline; this script is what refreshes the cache.
  */
-import { RECIPES } from "../prisma/data/recipes";
+import { RECIPES as RECIPES_BASE } from "../prisma/data/recipes";
+import { RECIPES_2 } from "../prisma/data/recipes2";
+import { RECIPES_3 } from "../prisma/data/recipes3";
+import { RECIPES_4 } from "../prisma/data/recipes4";
+import { RECIPES_5 } from "../prisma/data/recipes5";
+import { RECIPES_6 } from "../prisma/data/recipes6";
+import { RECIPES_7 } from "../prisma/data/recipes7";
+import { RECIPES_8 } from "../prisma/data/recipes8";
+import { RECIPES_9 } from "../prisma/data/recipes9";
+import { RECIPES_10 } from "../prisma/data/recipes10";
 import { writeFileSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
+
+const RECIPES = [
+  ...RECIPES_BASE,
+  ...RECIPES_2,
+  ...RECIPES_3,
+  ...RECIPES_4,
+  ...RECIPES_5,
+  ...RECIPES_6,
+  ...RECIPES_7,
+  ...RECIPES_8,
+  ...RECIPES_9,
+  ...RECIPES_10,
+];
 
 const OUT_PATH = join(__dirname, "..", "prisma", "data", "images.ts");
 
