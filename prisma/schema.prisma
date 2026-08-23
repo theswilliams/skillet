@@ -1,14 +1,17 @@
 // Skillet — personal food optimizer
-// SQLite for local dev; swap `provider` to "postgresql" for production —
-// no model changes required (no SQLite-only types are used).
+// Postgres (Neon, via Vercel's marketplace integration). directUrl uses the
+// unpooled connection for migrations/push, since PgBouncer's pooled
+// connection (the default DATABASE_URL) doesn't support the DDL session
+// features `prisma db push`/`migrate` need.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {

@@ -5,14 +5,28 @@ A Pinterest-meets-Tinder meal planner: swipe to discover recipes, plan a budget-
 ## Stack
 
 - **Next.js 15** (App Router) + **TypeScript** — one deployable codebase for UI + API routes.
-- **Prisma + SQLite** (`prisma/dev.db`) — real relational DB; swap the `provider` in `prisma/schema.prisma` to `postgresql` for production with no model changes.
+- **Prisma + Postgres** (Neon, provisioned via Vercel's marketplace integration) — `directUrl` in `prisma/schema.prisma` points at Neon's unpooled connection for schema push/migrate, while the app runtime uses the pooled `DATABASE_URL`.
 - **Tailwind CSS v4** for styling, **Framer Motion** for the swipe/drag interactions.
 - No auth: everything hangs off one demo user (`src/lib/currentUser.ts`) so there's no login flow to build. The schema is already multi-user — swapping in real auth is a session-lookup change, not a data model change.
 
-## Running it
+## Deployment
+
+Live on Vercel, project `redress69/skillet`, with a Neon Postgres database connected via Vercel's Storage integration (`vercel integration add neon`). `DATABASE_URL` / `DATABASE_URL_UNPOOLED` are injected automatically into the Vercel project's env — no manual secret management.
+
+## Running it locally
 
 ```bash
 npm install
+```
+
+Create `.env` with a Postgres connection string (a local Postgres, a Neon branch, or `vercel env pull .env` if you have access to the linked project):
+
+```
+DATABASE_URL="postgresql://..."
+DATABASE_URL_UNPOOLED="postgresql://..."  # same DB, non-pooled — used for db push/migrate
+```
+
+```bash
 npx prisma db push
 npm run db:seed
 npm run dev
@@ -45,3 +59,8 @@ Per the architecture goals, cost math, grocery consolidation, ingredient-overlap
 - Single demo user, no auth.
 - Pricing is static seed data, not a live grocery API (the `IngredientPrice` model supports multiple sources for when that's added).
 - No real food photography — cards use generated gradient + emoji art (`Recipe.imageUrl` exists in the schema for when photos are added).
+
+## Neon quick reference
+
+- Dashboard: `vercel integration open neon skillet-db` (or the Vercel Storage tab).
+- Reseed production data: pull `DATABASE_URL`/`DATABASE_URL_UNPOOLED` into `.env` (see above) and run `npm run db:reset`.
