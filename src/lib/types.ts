@@ -150,12 +150,3 @@ export const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export const CATEGORY_ICONS: Record<string, string> = {
-  produce: "🥬",
-  meat: "🥩",
-  dairy: "🧀",
-  pantry: "🫙",
-  frozen: "🧊",
-  bakery: "🍞",
-  other: "🧺",
-};

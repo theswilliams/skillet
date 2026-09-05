@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, useTransform, AnimatePresence, type PanInfo } from "framer-motion";
+import { X, Star, Heart, Clock, Utensils } from "lucide-react";
 import { RecipeArt } from "@/components/RecipeArt";
 import { Chip, Spinner, EmptyState, SecondaryButton } from "@/components/ui";
 import type { RecipeDTO } from "@/lib/types";
@@ -61,7 +62,7 @@ export default function DiscoverPage() {
         <AnimatePresence>
           {queue.length === 0 ? (
             <EmptyState
-              icon="🍽️"
+              icon={<Utensils size={36} strokeWidth={1.5} />}
               title="You've seen everything!"
               subtitle="Check back later for new recipes, or adjust your taste in Profile."
               action={
@@ -89,9 +90,9 @@ export default function DiscoverPage() {
 
       {queue.length > 0 && (
         <div className="mt-6 flex items-center justify-center gap-5">
-          <RoundButton label="✕" tone="danger" onClick={() => queue[0] && handleDecision(queue[0], "disliked")} />
-          <RoundButton label="⭐" tone="gold" small onClick={() => queue[0] && handleDecision(queue[0], "saved")} />
-          <RoundButton label="♥" tone="success" onClick={() => queue[0] && handleDecision(queue[0], "liked")} />
+          <RoundButton icon={<X size={26} strokeWidth={2.25} />} tone="danger" onClick={() => queue[0] && handleDecision(queue[0], "disliked")} />
+          <RoundButton icon={<Star size={20} strokeWidth={2.25} />} tone="gold" small onClick={() => queue[0] && handleDecision(queue[0], "saved")} />
+          <RoundButton icon={<Heart size={26} strokeWidth={2.25} />} tone="success" onClick={() => queue[0] && handleDecision(queue[0], "liked")} />
         </div>
       )}
 
@@ -101,9 +102,10 @@ export default function DiscoverPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-white md:bottom-8"
+            className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold text-white md:bottom-8"
           >
-            Saved &quot;{savedFlash}&quot; ⭐
+            <Star size={14} strokeWidth={2.5} />
+            Saved &quot;{savedFlash}&quot;
           </motion.div>
         )}
       </AnimatePresence>
@@ -165,7 +167,9 @@ function SwipeCard({
         </div>
         <p className="line-clamp-2 text-sm text-[var(--color-ink-soft)]">{recipe.description}</p>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          <Chip tone="neutral">⏱ {recipe.totalMinutes} min</Chip>
+          <Chip tone="neutral">
+            <Clock size={12} strokeWidth={2.25} /> {recipe.totalMinutes} min
+          </Chip>
           <Chip tone="neutral">{recipe.servings} servings</Chip>
           <Chip tone="neutral">{recipe.cuisine}</Chip>
           <Chip tone="mint">{recipe.difficulty}</Chip>
@@ -179,12 +183,12 @@ function SwipeCard({
 }
 
 function RoundButton({
-  label,
+  icon,
   tone,
   onClick,
   small,
 }: {
-  label: string;
+  icon: React.ReactNode;
   tone: "danger" | "success" | "gold";
   onClick: () => void;
   small?: boolean;
@@ -197,11 +201,11 @@ function RoundButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center rounded-full border-2 bg-white font-bold shadow-md transition-transform active:scale-90 ${colors[tone]} ${
-        small ? "h-12 w-12 text-lg" : "h-16 w-16 text-2xl"
+      className={`flex items-center justify-center rounded-full border-2 bg-white shadow-md transition-transform active:scale-90 ${colors[tone]} ${
+        small ? "h-12 w-12" : "h-16 w-16"
       }`}
     >
-      {label}
+      {icon}
     </button>
   );
 }

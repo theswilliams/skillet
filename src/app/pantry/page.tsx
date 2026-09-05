@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { Barcode, Refrigerator, CookingPot, Calendar, X } from "lucide-react";
 import { Spinner, EmptyState, SecondaryButton, PrimaryButton } from "@/components/ui";
 import { RecipeArt } from "@/components/RecipeArt";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -153,7 +154,7 @@ export default function PantryPage() {
 
       <div className="mt-4 flex gap-2">
         <SecondaryButton onClick={() => setShowScanner(true)} className="flex-1">
-          📷 Scan Barcode
+          <Barcode size={16} strokeWidth={2} /> Scan Barcode
         </SecondaryButton>
       </div>
 
@@ -182,7 +183,7 @@ export default function PantryPage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon="🥫" title="Your pantry is empty" subtitle="Add a few staples above to see what you can cook right now." />
+        <EmptyState icon={<Refrigerator size={36} strokeWidth={1.5} />} title="Your pantry is empty" subtitle="Add a few staples above to see what you can cook right now." />
       ) : (
         <div className="mt-6 flex flex-wrap gap-2">
           {items
@@ -209,7 +210,7 @@ export default function PantryPage() {
                     className="text-[var(--color-ink-soft)] hover:text-[var(--color-gold)]"
                     title="Set expiration date"
                   >
-                    📅
+                    <Calendar size={14} strokeWidth={2} />
                   </button>
                   {editingExpiryId === item.id && (
                     <input
@@ -222,7 +223,7 @@ export default function PantryPage() {
                     />
                   )}
                   <button onClick={() => removeItem(item.id)} className="text-[var(--color-ink-soft)] hover:text-[var(--color-coral)]">
-                    ✕
+                    <X size={14} strokeWidth={2.25} />
                   </button>
                 </span>
               );
@@ -235,8 +236,8 @@ export default function PantryPage() {
           <div onClick={(e) => e.stopPropagation()} className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-t-3xl bg-white p-4 md:rounded-3xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">Recipes Within Reach</h3>
-              <button onClick={() => setShowFilter(false)} className="text-xl text-[var(--color-ink-soft)]">
-                ✕
+              <button onClick={() => setShowFilter(false)} className="text-[var(--color-ink-soft)]">
+                <X size={20} strokeWidth={2.25} />
               </button>
             </div>
             <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
@@ -248,7 +249,7 @@ export default function PantryPage() {
                   <Spinner className="h-6 w-6 text-[var(--color-coral)]" />
                 </div>
               ) : available.length === 0 ? (
-                <EmptyState icon="🍳" title="Nothing within reach yet" subtitle="Add a few more pantry staples, especially proteins and starches." />
+                <EmptyState icon={<CookingPot size={36} strokeWidth={1.5} />} title="Nothing within reach yet" subtitle="Add a few more pantry staples, especially proteins and starches." />
               ) : (
                 <div className="flex flex-col divide-y divide-[var(--color-line)]">
                   {available.map((r) => (

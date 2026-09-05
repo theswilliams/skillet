@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { RefreshCw, Sparkles, Calendar, Recycle, ShoppingCart, Check, RotateCcw, X } from "lucide-react";
 import { RecipeArt } from "@/components/RecipeArt";
 import { PrimaryButton, SecondaryButton, Spinner, SectionCard, ProgressBar, EmptyState, Chip } from "@/components/ui";
 import type { MealPlanDTO, RecipeDTO } from "@/lib/types";
@@ -88,13 +89,23 @@ export default function PlanPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold tracking-tight">Your Week</h1>
         <SecondaryButton onClick={generatePlan} disabled={generating}>
-          {generating ? "Building…" : plan ? "🔄 Rebuild Plan" : "✨ Build My Week"}
+          {generating ? (
+            "Building…"
+          ) : plan ? (
+            <>
+              <RefreshCw size={14} strokeWidth={2.25} /> Rebuild Plan
+            </>
+          ) : (
+            <>
+              <Sparkles size={14} strokeWidth={2.25} /> Build My Week
+            </>
+          )}
         </SecondaryButton>
       </div>
 
       {!plan ? (
         <EmptyState
-          icon="📅"
+          icon={<Calendar size={36} strokeWidth={1.5} />}
           title="No plan yet"
           subtitle="We'll generate 7 dinners that fit your budget and taste, maximizing ingredient reuse."
           action={
@@ -124,13 +135,17 @@ export default function PlanPage() {
               <ProgressBar pct={(plan.estimatedCost / Math.max(1, plan.budget)) * 100} tone={plan.estimatedCost > plan.budget ? "coral" : "mint"} />
             </div>
             {plan.efficiency.sharedIngredients.length > 0 && (
-              <p className="mt-3 text-xs text-[var(--color-ink-soft)]">
-                <span className="font-semibold text-[var(--color-mint)]">♻ Reused: </span>
+              <p className="mt-3 flex items-center gap-1 text-xs text-[var(--color-ink-soft)]">
+                <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-mint)]">
+                  <Recycle size={13} strokeWidth={2.25} /> Reused:
+                </span>
                 {plan.efficiency.sharedIngredients.slice(0, 6).map((s) => s.name).join(", ")}
               </p>
             )}
             <Link href="/grocery">
-              <SecondaryButton className="mt-4 w-full">🛒 Generate Grocery List</SecondaryButton>
+              <SecondaryButton className="mt-4 w-full">
+                <ShoppingCart size={16} strokeWidth={2.25} /> Generate Grocery List
+              </SecondaryButton>
             </Link>
           </SectionCard>
 
@@ -167,30 +182,34 @@ export default function PlanPage() {
                           <p className="text-xs text-[var(--color-ink-soft)]">
                             {item.recipe.totalMinutes}m · ${item.recipe.costPerServing.toFixed(2)}/serving
                           </p>
-                          {item.cooked && <Chip tone="mint">✓ Cooked</Chip>}
+                          {item.cooked && (
+                            <Chip tone="mint">
+                              <Check size={11} strokeWidth={2.5} /> Cooked
+                            </Chip>
+                          )}
                         </div>
                       </Link>
                       <div className="flex shrink-0 flex-col gap-1">
                         <button
                           onClick={() => toggleCooked(item.id, !item.cooked)}
                           title="Mark cooked"
-                          className="rounded-full px-2 py-1 text-xs font-bold text-[var(--color-mint)] hover:bg-[var(--color-mint-light)]"
+                          className="rounded-full p-1.5 text-[var(--color-mint)] hover:bg-[var(--color-mint-light)]"
                         >
-                          ✓
+                          <Check size={14} strokeWidth={2.5} />
                         </button>
                         <button
                           onClick={() => replaceItem(item.id)}
                           title="Replace"
-                          className="rounded-full px-2 py-1 text-xs font-bold text-[var(--color-gold)] hover:bg-[var(--color-gold-light)]"
+                          className="rounded-full p-1.5 text-[var(--color-gold)] hover:bg-[var(--color-gold-light)]"
                         >
-                          ⟳
+                          <RotateCcw size={14} strokeWidth={2.25} />
                         </button>
                         <button
                           onClick={() => removeItem(item.id)}
                           title="Remove"
-                          className="rounded-full px-2 py-1 text-xs font-bold text-[var(--color-coral)] hover:bg-[var(--color-coral-light)]"
+                          className="rounded-full p-1.5 text-[var(--color-coral)] hover:bg-[var(--color-coral-light)]"
                         >
-                          ✕
+                          <X size={14} strokeWidth={2.25} />
                         </button>
                       </div>
                     </div>
@@ -245,8 +264,8 @@ function RecipePicker({ onClose, onPick }: { onClose: () => void; onPick: (r: Re
       >
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">Add a meal</h3>
-          <button onClick={onClose} className="text-xl text-[var(--color-ink-soft)]">
-            ✕
+          <button onClick={onClose} className="text-[var(--color-ink-soft)]">
+            <X size={20} strokeWidth={2.25} />
           </button>
         </div>
         <input

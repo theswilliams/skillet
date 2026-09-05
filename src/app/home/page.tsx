@@ -49,7 +49,7 @@ export default function HomePage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-8 px-4 pt-6 sm:px-6 md:px-8">
       <div className="animate-slide-up">
         <h1 className="text-2xl font-extrabold tracking-tight">
-          {greeting()}{data.user.name ? `, ${data.user.name}` : ""} 👋
+          {greeting()}{data.user.name ? `, ${data.user.name}` : ""}
         </h1>
         <p className="mt-1 text-sm text-[var(--color-ink-soft)]">Here&apos;s what&apos;s on deck.</p>
       </div>

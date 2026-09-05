@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { X, CameraOff } from "lucide-react";
 
 /**
  * Camera-based barcode scanner using the browser's native BarcodeDetector
@@ -79,8 +80,8 @@ export function BarcodeScanner({
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center justify-between p-4">
         <h3 className="text-lg font-bold text-white">Scan Barcode</h3>
-        <button onClick={onClose} className="text-xl text-white">
-          ✕
+        <button onClick={onClose} className="text-white">
+          <X size={22} strokeWidth={2.25} />
         </button>
       </div>
 
@@ -92,7 +93,7 @@ export function BarcodeScanner({
         </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <span className="text-4xl">📷</span>
+          <CameraOff size={36} strokeWidth={1.5} className="text-white/80" />
           <p className="text-sm text-white/80">
             {cameraError ?? "Live camera scanning isn't supported in this browser. Enter the barcode number instead."}
           </p>

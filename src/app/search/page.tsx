@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Link as LinkIcon, Search, SearchX, X } from "lucide-react";
 import { RecipeArt } from "@/components/RecipeArt";
 import { Chip, EmptyState, Spinner, PrimaryButton, SecondaryButton } from "@/components/ui";
 import Link from "next/link";
@@ -74,13 +75,13 @@ export default function SearchPage() {
         <h1 className="text-xl font-extrabold tracking-tight">Search</h1>
         <button
           onClick={() => setShowImport(true)}
-          className="text-xs font-bold text-[var(--color-coral)] underline underline-offset-2"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-coral)] underline underline-offset-2"
         >
-          🔗 Import from URL
+          <LinkIcon size={13} strokeWidth={2.25} /> Import from URL
         </button>
       </div>
       <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[var(--color-line)] bg-white px-4 py-3">
-        <span className="text-[var(--color-ink-soft)]">🔍</span>
+        <Search size={16} strokeWidth={2} className="shrink-0 text-[var(--color-ink-soft)]" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -120,7 +121,7 @@ export default function SearchPage() {
             <Spinner className="h-6 w-6 text-[var(--color-coral)]" />
           </div>
         ) : !recipes || recipes.length === 0 ? (
-          <EmptyState icon="🔎" title="No recipes match yet" subtitle="Try loosening a filter or searching a different term." />
+          <EmptyState icon={<SearchX size={36} strokeWidth={1.5} />} title="No recipes match yet" subtitle="Try loosening a filter or searching a different term." />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {recipes.map((r) => (
@@ -180,8 +181,8 @@ function ImportRecipeModal({ onClose, onImported }: { onClose: () => void; onImp
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-white p-5 md:rounded-3xl">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">Import from URL</h3>
-          <button onClick={onClose} className="text-xl text-[var(--color-ink-soft)]">
-            ✕
+          <button onClick={onClose} className="text-[var(--color-ink-soft)]">
+            <X size={20} strokeWidth={2.25} />
           </button>
         </div>
         <p className="mt-1 text-xs text-[var(--color-ink-soft)]">

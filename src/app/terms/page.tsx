@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export const metadata = { title: "Terms of Service — Skillet" };
 
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
-      <Link href="/profile" className="text-sm font-semibold text-[var(--color-coral)]">
-        ← Back to Profile
+      <Link href="/profile" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-coral)]">
+        <ArrowLeft size={15} strokeWidth={2.25} /> Back to Profile
       </Link>
       <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Terms of Service</h1>
       <p className="mt-1 text-sm text-[var(--color-ink-soft)]">Last updated August 2026</p>

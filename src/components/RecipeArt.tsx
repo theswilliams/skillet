@@ -1,29 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { UtensilsCrossed } from "lucide-react";
 
 /**
  * Recipe card art. Renders a real food photo (Recipe.imageUrl, sourced from
  * Wikimedia Commons — see scripts/fetch-recipe-images.ts) when one is
  * available, laid over the gradient so a slow-loading image never shows a
- * blank flash. Falls back to the generated gradient + emoji treatment when
- * there's no photo, or if the photo URL fails to load.
+ * blank flash. Falls back to the generated gradient + a plain line icon when
+ * there's no photo, or if the photo URL fails to load — every seeded recipe
+ * has a real photo, so this is a rare edge case, not the primary look.
  */
 export function RecipeArt({
   hue,
-  emoji,
   imageUrl,
   className = "",
   size = "md",
 }: {
   hue: number;
-  emoji: string;
+  emoji?: string;
   imageUrl?: string | null;
   className?: string;
   size?: "sm" | "md" | "lg";
 }) {
   const [errored, setErrored] = useState(false);
-  const emojiSize = size === "lg" ? "text-8xl" : size === "sm" ? "text-3xl" : "text-6xl";
+  const iconSize = size === "lg" ? 56 : size === "sm" ? 24 : 40;
   const showPhoto = !!imageUrl && !errored;
 
   return (
@@ -42,9 +43,7 @@ export function RecipeArt({
                 "radial-gradient(circle at 30% 30%, white 0%, transparent 40%), radial-gradient(circle at 80% 80%, black 0%, transparent 45%)",
             }}
           />
-          <span className={`${emojiSize} drop-shadow-lg select-none`} style={{ filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.25))" }}>
-            {emoji}
-          </span>
+          <UtensilsCrossed size={iconSize} strokeWidth={1.5} className="text-white/85" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" }} />
         </>
       )}
       {imageUrl && (

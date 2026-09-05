@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use as usePromise } from "react";
+import { ArrowLeft, Star, Link as LinkIcon, CircleCheck, ShoppingCart, Check } from "lucide-react";
 import { RecipeArt } from "@/components/RecipeArt";
 import { Chip, PrimaryButton, SecondaryButton, Spinner, SectionCard } from "@/components/ui";
 import type { RecipeDTO, PantryMatchDTO } from "@/lib/types";
@@ -50,7 +51,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
     setBusy("cook");
     await post("/api/interactions", { recipeId: recipe.id, type: "cooked" });
     setBusy(null);
-    flash("Marked as cooked 🎉");
+    flash("Marked as cooked");
   }
 
   async function addToGroceryList() {
@@ -68,7 +69,7 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
     await post("/api/meal-plan/item", { mealPlanId: plan.id, recipeId: recipe.id, dayIndex, servings: recipe.servings });
     await post("/api/grocery-list", { mealPlanId: plan.id });
     setBusy(null);
-    flash("Added to grocery list 🛒");
+    flash("Added to grocery list");
   }
 
   if (!recipe) {
@@ -88,16 +89,16 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
         <RecipeArt hue={recipe.hue} emoji={recipe.emoji} imageUrl={recipe.imageUrl} size="lg" className="h-64 w-full sm:h-80 sm:rounded-b-3xl" />
         <button
           onClick={() => router.back()}
-          className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg font-bold shadow"
+          className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow"
         >
-          ←
+          <ArrowLeft size={18} strokeWidth={2.25} />
         </button>
         <button
           onClick={toggleSave}
           disabled={busy === "save"}
-          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow"
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow"
         >
-          {isSaved ? "⭐" : "☆"}
+          <Star size={18} strokeWidth={2} className={isSaved ? "fill-[var(--color-gold)] text-[var(--color-gold)]" : "text-[var(--color-ink-soft)]"} />
         </button>
       </div>
 
@@ -118,9 +119,9 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
             href={recipe.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block text-xs font-semibold text-[var(--color-coral)] underline underline-offset-2"
+            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-coral)] underline underline-offset-2"
           >
-            🔗 Imported from {new URL(recipe.sourceUrl).hostname.replace(/^www\./, "")}
+            <LinkIcon size={12} strokeWidth={2.25} /> Imported from {new URL(recipe.sourceUrl).hostname.replace(/^www\./, "")}
           </a>
         )}
 
@@ -134,11 +135,13 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
         {pantryMatch && (
           <SectionCard className="mt-5 p-4">
             {pantryMatch.canMake ? (
-              <p className="text-sm font-semibold text-[var(--color-mint)]">✓ You have everything for this recipe!</p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-mint)]">
+                <CircleCheck size={16} strokeWidth={2.25} /> You have everything for this recipe!
+              </p>
             ) : (
               <>
-                <p className={`text-sm font-semibold ${pantryMatch.majorityMatch ? "text-[var(--color-gold)]" : ""}`}>
-                  {pantryMatch.majorityMatch && "★ "}
+                <p className={`flex items-center gap-1.5 text-sm font-semibold ${pantryMatch.majorityMatch ? "text-[var(--color-gold)]" : ""}`}>
+                  {pantryMatch.majorityMatch && <Star size={14} strokeWidth={2.25} className="fill-current" />}
                   You have {pantryMatch.haveCount}/{pantryMatch.neededCount} ingredients
                   {pantryMatch.majorityMatch && " — most of the main parts are covered"}
                 </p>
@@ -204,10 +207,10 @@ export default function RecipeDetailPage({ params }: { params: Promise<{ slug: s
 
       <div className="fixed bottom-16 left-0 right-0 z-30 flex gap-3 border-t border-[var(--color-line)] bg-white/95 px-5 py-3 backdrop-blur md:sticky md:bottom-0 md:mt-8 md:rounded-b-3xl">
         <SecondaryButton onClick={addToGroceryList} disabled={busy === "grocery"} className="flex-1">
-          🛒 Add to Grocery List
+          <ShoppingCart size={16} strokeWidth={2.25} /> Add to Grocery List
         </SecondaryButton>
         <PrimaryButton onClick={markCooked} disabled={busy === "cook"} className="flex-1">
-          ✓ Mark Cooked
+          <Check size={16} strokeWidth={2.25} /> Mark Cooked
         </PrimaryButton>
       </div>
 

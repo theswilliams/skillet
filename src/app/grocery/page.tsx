@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ShoppingCart, RefreshCw, Store, Trophy, Check, X, ShoppingBasket } from "lucide-react";
 import { Spinner, EmptyState, SecondaryButton, PrimaryButton, SectionCard } from "@/components/ui";
-import { CATEGORY_LABELS, CATEGORY_ICONS, type GroceryListDTO, type GroceryItemDTO, type StoreComparisonDTO } from "@/lib/types";
+import { CATEGORY_ICONS } from "@/components/categoryIcons";
+import { CATEGORY_LABELS, type GroceryListDTO, type GroceryItemDTO, type StoreComparisonDTO } from "@/lib/types";
 
 export default function GroceryPage() {
   const [list, setList] = useState<GroceryListDTO | null | undefined>(undefined);
@@ -85,7 +87,7 @@ export default function GroceryPage() {
       <div className="mx-auto max-w-2xl px-4 pt-6">
         <h1 className="text-xl font-extrabold tracking-tight">Grocery List</h1>
         <EmptyState
-          icon="🛒"
+          icon={<ShoppingCart size={36} strokeWidth={1.5} />}
           title="No grocery list yet"
           subtitle="Build a meal plan first, then generate your list from it."
           action={
@@ -106,7 +108,13 @@ export default function GroceryPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold tracking-tight">Grocery List</h1>
         <SecondaryButton onClick={regenerateFromPlan} disabled={regenerating}>
-          {regenerating ? "…" : "🔄 Regenerate"}
+          {regenerating ? (
+            "…"
+          ) : (
+            <>
+              <RefreshCw size={14} strokeWidth={2.25} /> Regenerate
+            </>
+          )}
         </SecondaryButton>
       </div>
 
@@ -120,8 +128,14 @@ export default function GroceryPage() {
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--color-line)]">
           <div className="h-full rounded-full bg-[var(--color-mint)] transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <button onClick={toggleStoreComparison} className="mt-3 text-xs font-bold text-[var(--color-coral)] underline underline-offset-2">
-          {showStores ? "Hide store comparison" : "🏪 Compare prices across stores"}
+        <button onClick={toggleStoreComparison} className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[var(--color-coral)] underline underline-offset-2">
+          {showStores ? (
+            "Hide store comparison"
+          ) : (
+            <>
+              <Store size={13} strokeWidth={2.25} /> Compare prices across stores
+            </>
+          )}
         </button>
         {showStores && (
           <div className="mt-3 border-t border-[var(--color-line)] pt-3">
@@ -143,8 +157,8 @@ export default function GroceryPage() {
                         c.store === storeComparison.cheapestStore ? "bg-[var(--color-mint-light)] font-bold text-[var(--color-mint)]" : "bg-[var(--color-cream)]"
                       }`}
                     >
-                      <span>
-                        {c.store === storeComparison.cheapestStore && "🏆 "}
+                      <span className="inline-flex items-center gap-1">
+                        {c.store === storeComparison.cheapestStore && <Trophy size={13} strokeWidth={2.25} />}
                         {c.store}
                       </span>
                       <span>${c.total.toFixed(2)}</span>
@@ -169,10 +183,12 @@ export default function GroceryPage() {
       </div>
 
       <div className="mt-6 flex flex-col gap-6">
-        {categories.map(([cat, items]) => (
+        {categories.map(([cat, items]) => {
+          const CategoryIcon = CATEGORY_ICONS[cat] ?? ShoppingBasket;
+          return (
           <div key={cat}>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--color-ink-soft)]">
-              {CATEGORY_ICONS[cat] ?? "🧺"} {CATEGORY_LABELS[cat] ?? cat}
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--color-ink-soft)]">
+              <CategoryIcon size={14} strokeWidth={2} /> {CATEGORY_LABELS[cat] ?? cat}
             </p>
             <ul className="flex flex-col divide-y divide-[var(--color-line)] rounded-2xl border border-[var(--color-line)] bg-white">
               {items.map((item) => (
@@ -183,7 +199,7 @@ export default function GroceryPage() {
                       item.checked ? "border-[var(--color-mint)] bg-[var(--color-mint)] text-white" : "border-[var(--color-line)]"
                     }`}
                   >
-                    {item.checked && "✓"}
+                    {item.checked && <Check size={13} strokeWidth={3} />}
                   </button>
                   <div className={`min-w-0 flex-1 ${item.checked ? "opacity-40 line-through" : ""}`}>
                     <p className="truncate text-sm font-semibold">
@@ -195,13 +211,14 @@ export default function GroceryPage() {
                     {item.estimatedCost > 0 ? `$${item.estimatedCost.toFixed(2)}` : ""}
                   </span>
                   <button onClick={() => removeItem(item.id)} className="shrink-0 text-[var(--color-ink-soft)]">
-                    ✕
+                    <X size={15} strokeWidth={2.25} />
                   </button>
                 </li>
               ))}
             </ul>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -97,10 +97,10 @@ export function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
-export function EmptyState({ icon, title, subtitle, action }: { icon: string; title: string; subtitle?: string; action?: React.ReactNode }) {
+export function EmptyState({ icon, title, subtitle, action }: { icon: React.ReactNode; title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--color-line)] px-6 py-14 text-center">
-      <span className="text-4xl">{icon}</span>
+      <span className="mb-1 text-[var(--color-ink-soft)]">{icon}</span>
       <p className="text-base font-semibold text-[var(--color-ink)]">{title}</p>
       {subtitle && <p className="max-w-xs text-sm text-[var(--color-ink-soft)]">{subtitle}</p>}
       {action}

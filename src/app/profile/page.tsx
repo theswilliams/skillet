@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 import { Chip, SecondaryButton, Spinner, SectionCard } from "@/components/ui";
 import { RecipeRow } from "@/components/RecipeCard";
 import type { PreferencesDTO, RecipeDTO } from "@/lib/types";
@@ -162,7 +163,15 @@ export default function ProfilePage() {
 
       <div className="sticky bottom-16 mt-4 md:bottom-0">
         <SecondaryButton onClick={save} disabled={!dirty || saving} className="w-full bg-[var(--color-ink)] text-white hover:bg-black">
-          {saving ? "Saving…" : dirty ? "Save Changes" : "Saved ✓"}
+          {saving ? (
+            "Saving…"
+          ) : dirty ? (
+            "Save Changes"
+          ) : (
+            <>
+              <Check size={15} strokeWidth={2.5} /> Saved
+            </>
+          )}
         </SecondaryButton>
       </div>
 
