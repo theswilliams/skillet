@@ -83,7 +83,23 @@ export function buildTasteProfile(
   profile.likesCheap = clamp(cheapSignal / norm);
   profile.likesHighProtein = clamp(proteinSignal / norm);
 
+  // Saturate per-cuisine/protein/tag scores (log-dampened) so a burst of
+  // interactions on one cuisine can't linearly dominate forever — a user who
+  // liked 20 Mexican recipes and 2 Thai ones should still see meaningful
+  // Thai representation, not just an ever-widening Mexican lead.
+  profile.cuisineScores = saturateScores(profile.cuisineScores);
+  profile.proteinScores = saturateScores(profile.proteinScores);
+  profile.tagScores = saturateScores(profile.tagScores);
+
   return profile;
+}
+
+function saturateScores(scores: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(scores)) {
+    out[key] = Math.sign(value) * Math.log1p(Math.abs(value));
+  }
+  return out;
 }
 
 export function scoreRecipe(recipe: RecipeWithIngredients, profile: TasteProfile): number {
@@ -110,10 +126,53 @@ export function rankForDiscovery(
   const unseen = recipes.filter((r) => !seenRecipeIds.has(r.id));
   // Add small deterministic jitter (based on id) so a cold-start profile
   // doesn't always show recipes in the same seed order.
-  return unseen
+  const scored = unseen
     .map((r) => ({ recipe: r, score: scoreRecipe(r, profile) + hashJitter(r.id) }))
-    .sort((a, b) => b.score - a.score)
-    .map((x) => x.recipe);
+    .sort((a, b) => b.score - a.score);
+
+  return interleaveByCuisine(scored.map((x) => x.recipe));
+}
+
+/**
+ * Score-sort alone lets one cuisine's recipes cluster at the top whenever
+ * the taste profile leans that way — the swipe deck can end up feeling like
+ * a monoculture even with a healthy profile, since recipes within a cuisine
+ * often score similarly. This keeps the overall score ordering (best recipes
+ * still surface first) but caps how many of the same cuisine can appear
+ * consecutively, round-robin-pulling from the next-best cuisine instead.
+ */
+function interleaveByCuisine<T extends { cuisine: string }>(ranked: T[], maxStreak = 2): T[] {
+  const buckets = new Map<string, T[]>();
+  for (const r of ranked) {
+    if (!buckets.has(r.cuisine)) buckets.set(r.cuisine, []);
+    buckets.get(r.cuisine)!.push(r);
+  }
+
+  const remaining = new Set(ranked);
+  const result: T[] = [];
+  let lastCuisine: string | null = null;
+  let streak = 0;
+
+  while (remaining.size > 0) {
+    // Walk the overall ranking and take the first item whose cuisine either
+    // isn't on a streak, or has no alternative cuisine left to break it up.
+    const chosen = ranked.find((r) => {
+      if (!remaining.has(r)) return false;
+      const bucket = buckets.get(r.cuisine)!;
+      if (bucket[0] !== r) return false; // only ever take a cuisine's next-best item, in order
+      const wouldExtendStreak = r.cuisine === lastCuisine && streak >= maxStreak;
+      const otherOptionsExist = [...buckets.entries()].some(([c, b]) => c !== r.cuisine && b.length > 0);
+      return !(wouldExtendStreak && otherOptionsExist);
+    })!;
+
+    buckets.get(chosen.cuisine)!.shift();
+    remaining.delete(chosen);
+    result.push(chosen);
+    streak = chosen.cuisine === lastCuisine ? streak + 1 : 1;
+    lastCuisine = chosen.cuisine;
+  }
+
+  return result;
 }
 
 function clamp(n: number, min = -1, max = 1) {

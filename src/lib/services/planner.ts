@@ -78,6 +78,7 @@ export function generateMealPlan(
 
   const chosen: PlannedMeal[] = [];
   const chosenIngredientIds = new Map<string, number>(); // ingredientId -> count of recipes using it
+  const chosenCuisineCounts = new Map<string, number>();
   let remainingBudget = constraints.weeklyBudget;
   const usedRecipeIds = new Set<string>();
 
@@ -91,12 +92,26 @@ export function generateMealPlan(
         .filter((ri) => !ri.optional)
         .reduce((sum, ri) => sum + scaledIngredientCost(ri, multiplier), 0);
 
-      const overlapBonus = recipe.ingredients.reduce((sum, ri) => {
+      // Capped: recipes within the same cuisine tend to share far more
+      // ingredients with each other (onion, garlic, tortillas...) than
+      // recipes across cuisines do, so an uncapped bonus here quietly turns
+      // "reuse ingredients" into "only ever pick this one cuisine again".
+      const rawOverlap = recipe.ingredients.reduce((sum, ri) => {
         const timesUsed = chosenIngredientIds.get(ri.ingredientId) ?? 0;
         return sum + (timesUsed > 0 ? 4 : 0);
       }, 0);
+      const overlapBonus = Math.min(rawOverlap, 8);
 
-      const cuisineBonus = constraints.favoriteCuisines.includes(recipe.cuisine) ? 3 : 0;
+      // Reward trying a cuisine the plan hasn't leaned on yet. The first
+      // repeat is free — that's the actual "cook once, eat 3 times" cluster,
+      // two recipes sharing a cuisine (and its ingredients) on purpose — but
+      // a third+ pick of the same cuisine costs steeply more than the last,
+      // so the week can't collapse into one cuisine just because it scored
+      // well once.
+      const cuisineUsedCount = chosenCuisineCounts.get(recipe.cuisine) ?? 0;
+      const favoriteBase = constraints.favoriteCuisines.includes(recipe.cuisine) ? 3 : 0;
+      const cuisineBonus = favoriteBase - Math.max(0, cuisineUsedCount - 1) * 5;
+
       const tasteScore = scoreRecipe(recipe, profile);
       const totalScore = tasteScore + overlapBonus + cuisineBonus;
       const affordable = cost <= remainingBudget;
@@ -117,6 +132,7 @@ export function generateMealPlan(
     chosen.push({ recipe: pick.recipe, servings: servingsNeeded, cost: round2(pick.cost) });
     usedRecipeIds.add(pick.recipe.id);
     remainingBudget -= pick.cost;
+    chosenCuisineCounts.set(pick.recipe.cuisine, (chosenCuisineCounts.get(pick.recipe.cuisine) ?? 0) + 1);
     for (const ri of pick.recipe.ingredients) {
       if (ri.optional) continue;
       chosenIngredientIds.set(ri.ingredientId, (chosenIngredientIds.get(ri.ingredientId) ?? 0) + 1);
