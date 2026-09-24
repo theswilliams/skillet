@@ -91,6 +91,7 @@ async function searchCommons(query: string, attempt = 1): Promise<CommonsImage[]
   if (!pages) return [];
 
   return Object.values(pages)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped MediaWiki API response
     .map((p: any) => {
       const info = p.imageinfo?.[0];
       if (!info) return null;

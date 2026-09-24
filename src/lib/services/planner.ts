@@ -1,5 +1,5 @@
 import type { Ingredient, Recipe, RecipeIngredient } from "@prisma/client";
-import { recipeCost, scaledIngredientCost } from "./cost";
+import { scaledIngredientCost } from "./cost";
 import { calculateIngredientEfficiency } from "./efficiency";
 import type { TasteProfile } from "./recommend";
 import { scoreRecipe } from "./recommend";

@@ -28,10 +28,6 @@ const RECIPES = [
 
 const prisma = new PrismaClient();
 
-function slugifyName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-
 async function main() {
   console.log(`Seeding ${INGREDIENTS.length} ingredients...`);
   for (const ing of INGREDIENTS) {

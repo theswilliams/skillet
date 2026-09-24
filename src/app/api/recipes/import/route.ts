@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
 import { fetchAndParseRecipe, parseIngredientLine } from "@/lib/services/recipeImport";
 import { serializeRecipe } from "@/lib/serialize";
+import { importRecipeSchema, firstError } from "@/lib/validation";
+import { rateLimit, clientIp } from "@/lib/security/rateLimit";
 
 function slugify(name: string) {
   return (
@@ -42,8 +44,12 @@ async function findOrCreateIngredient(name: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { url } = (await req.json()) as { url?: string };
-  if (!url) return NextResponse.json({ error: "Missing url" }, { status: 400 });
+  if (!rateLimit(`import:${clientIp(req.headers)}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Too many imports. Try again shortly." }, { status: 429 });
+  }
+  const parsedBody = importRecipeSchema.safeParse(await req.json().catch(() => null));
+  if (!parsedBody.success) return NextResponse.json({ error: firstError(parsedBody) }, { status: 400 });
+  const { url } = parsedBody.data;
 
   const userId = await getCurrentUserId();
 

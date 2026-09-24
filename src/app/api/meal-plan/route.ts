@@ -7,6 +7,7 @@ import { calculateIngredientEfficiency } from "@/lib/services/efficiency";
 import { scaledIngredientCost } from "@/lib/services/cost";
 import { serializeRecipe } from "@/lib/serialize";
 import { visibleRecipesWhere } from "@/lib/services/visibility";
+import { generatePlanSchema, firstError } from "@/lib/validation";
 
 function round2(n: number) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -69,7 +70,7 @@ export async function GET() {
   const userId = await getCurrentUserId();
   const weekStart = startOfWeek();
 
-  let plan = await prisma.mealPlan.findFirst({
+  const plan = await prisma.mealPlan.findFirst({
     where: { userId, weekStart },
     orderBy: { createdAt: "desc" },
   });
@@ -81,7 +82,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const userId = await getCurrentUserId();
-  const body = await req.json().catch(() => ({}));
+  const parsedBody = generatePlanSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsedBody.success) return NextResponse.json({ error: firstError(parsedBody) }, { status: 400 });
+  const body = parsedBody.data;
 
   const [prefs, recipes, interactions] = await Promise.all([
     prisma.userPreferences.upsert({ where: { userId }, update: {}, create: { userId } }),

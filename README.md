@@ -1,95 +1,75 @@
-# Skillet — Personal Food Optimizer
+# Skillet
 
-**[Live demo →](https://skillet-five.vercel.app)**
+A budget-first meal planner: swipe through recipes, generate a week of dinners that fits a weekly budget while reusing ingredients, and get one consolidated grocery list with pantry items subtracted. The planning, costing and recommendation logic is **plain, deterministic code (no LLM)** so results are reproducible and explainable.
 
-A Pinterest-meets-Tinder meal planner: swipe to discover recipes, plan a budget-first week that maximizes ingredient reuse ("Cook Once, Eat 3 Times"), and generate a consolidated grocery list — with pantry tracking, barcode scanning, live store price comparison, and recipe import from any URL.
+**Live demo:** https://skillet-five.vercel.app (one shared demo account; it resets daily)
 
-This is a solo-built showcase project, not a production app with real users — see [Showcase notes](#showcase-notes) for what that means in practice.
+> Portfolio project, not a product with users. Store prices are simulated (see *Current Status*).
 
-## Features
+<!-- TODO: Add screenshots: Discover (swipe deck), Plan (weekly plan + cost/efficiency), Grocery list, Pantry. -->
 
-- **Swipe discovery** — Tinder-style card deck of recipes (like/pass/save), personalized by a taste profile built from your swipe/save/cook history.
-- **Budget-first meal planning** — generates a week of dinners that fits a weekly budget, favors your preferred cuisines, and deliberately clusters ingredient overlap ("Cook Once, Eat 3 Times") without collapsing into one cuisine.
-- **Smart grocery lists** — consolidates a week's recipes into one shopping list, subtracts what's already in your pantry, and estimates total cost.
-- **Live store price comparison** — see the same grocery list priced across multiple grocery chains.
-- **Pantry tracking** — log what you have, with expiration-date tracking and reminders; **barcode scanning** (native `BarcodeDetector` API + Open Food Facts lookup) to add items by scanning instead of typing.
-- **"Use What I Have"** — surfaces recipes you can make with a *majority* of the primary ingredients on hand (protein, starch, etc.), not just recipes you have every single ingredient for.
-- **Recipe import from any URL** — paste a link to a recipe on the open web and Skillet parses its schema.org `Recipe` structured data straight into your own collection (the same technique used by apps like Paprika).
-- **277 original recipes across 17 cuisines**, each with real ingredient quantities/units, so cost, nutrition, and grocery consolidation are all *computed*, not hardcoded.
+## Overview
+Skillet answers "what should I cook this week for $X?" It builds a taste profile from what you swipe, save and cook, plans dinners that fit the budget, favours recipes that share ingredients ("Cook Once, Eat 3 Times"), and turns the plan into a shopping list.
 
-## Architecture: deterministic by design
+## Why I Built It
+*[Edit in your own words. Suggested:]* I wanted a project centred on algorithms and business rules rather than CRUD: a constrained optimisation problem (budget, taste, ingredient overlap), unit-aware cost math, and a recommendation loop, kept simple enough to test and explain.
 
-The product principle behind Skillet is that cost, planning, and matching logic should be plain, explainable algorithms — not LLM calls — so results are reproducible and debuggable. Every core algorithm lives in `src/lib/services/` as pure, framework-free functions:
+## Key Features
+- **Swipe discovery:** like/pass/save deck personalised by a taste profile that updates from your behaviour.
+- **Budget-first weekly planner** with a cost-per-person and an ingredient-efficiency score.
+- **Grocery list** consolidated across recipes, pantry subtracted, estimated total, per-store price comparison (simulated prices).
+- **Pantry tracking** with expiry dates, barcode scanning (browser `BarcodeDetector` + Open Food Facts lookup), and **"Use What I Have"** matching on the majority of primary ingredients.
+- **Recipe import from a URL** using schema.org `Recipe` JSON-LD.
+- **Natural-language-style search** via a deterministic rule-based query parser.
+- 277 original recipes across 17 cuisines with real quantities/units, so cost and nutrition are computed rather than hard-coded.
 
-| File | What it does |
-|---|---|
-| [`cost.ts`](src/lib/services/cost.ts) | Recipe cost from ingredient quantities × price. |
-| [`efficiency.ts`](src/lib/services/efficiency.ts) | The "Cook Once, Eat 3 Times" ingredient-overlap %. |
-| [`planner.ts`](src/lib/services/planner.ts) | Greedy budget + taste + overlap meal-plan generator — picks each day's recipe to maximize `(taste score + ingredient-overlap bonus) / cost`, with a capped, decaying bonus so cuisine reuse stays intentional instead of collapsing into a monoculture. |
-| [`recommend.ts`](src/lib/services/recommend.ts) | Rule-based taste profile from swipe/save/cook interactions, with log-dampened score saturation and cuisine-interleaved ranking so the swipe deck stays varied even as the profile strengthens. |
-| [`pantry.ts`](src/lib/services/pantry.ts) | Pantry matching, including majority-of-primary-ingredients "Use What I Have". |
-| [`grocery.ts`](src/lib/services/grocery.ts) | Ingredient consolidation across a week's recipes. |
-| [`pricing.ts`](src/lib/services/pricing.ts) | Multi-store price comparison. |
-| [`recipeImport.ts`](src/lib/services/recipeImport.ts) | schema.org `Recipe` JSON-LD parsing for URL import. |
-| [`nlSearch.ts`](src/lib/services/nlSearch.ts) | Deterministic NL query parser; `interpretQuery()` is the seam where an LLM-backed parser could be swapped in later without touching call sites. |
+## Architecture
+```
+Browser ─► Next.js 15 (App Router pages + ~20 API routes)
+              │  route handlers stay thin
+              ▼
+        src/lib/services/  (pure, framework-free algorithms)
+        cost · efficiency · planner · recommend · pantry · grocery · pricing · recipeImport · nlSearch
+              │
+              ▼
+        Prisma ─► PostgreSQL (Neon)   [users, recipes, ingredients, meal plans, pantry, interactions, …]
+ Vercel Cron ─► /api/cron/reset-demo   (bearer-secret protected; restores the shared demo account daily)
+```
+Everything hangs off a single demo user (`lib/currentUser.ts`); the schema is already multi-user (all data keyed by `userId`).
 
-## Stack
+## Technical Highlights
+- **Planner** (`planner.ts`): filters by hard constraints (cook time, dietary tags, disliked ingredients), scores each candidate on taste + a capped ingredient-overlap bonus + a cuisine-variety adjustment, then fills days greedily: the first two days by best score, later days by score per dollar, within the remaining budget. It stops when nothing affordable is left. Known quirks: if the hard filters leave no recipes they are dropped rather than returning an empty plan, and the first pick isn't budget-checked.
+- **Recommendation** (`recommend.ts`): rule-based taste profile with log-dampened saturation and cuisine-interleaved ranking so the deck stays varied.
+- **Seams for change:** `interpretQuery()` is where an LLM-backed parser could replace the rule-based one without touching callers.
+- **Data:** normalized ingredients with base-unit pricing, so recipes, plans and lists share one cost model.
+- **Ops:** scheduled demo reset via Vercel Cron; Neon pooled URL at runtime, unpooled for migrations.
 
-- **Next.js 15** (App Router) + **TypeScript** — one deployable codebase for UI + API routes.
-- **Prisma + Postgres** (Neon, provisioned via Vercel's marketplace integration) — `directUrl` in `prisma/schema.prisma` points at Neon's unpooled connection for schema push/migrate, while the app runtime uses the pooled `DATABASE_URL`.
-- **Tailwind CSS v4** for styling, **Framer Motion** for the swipe/drag interactions.
-- **Wikimedia Commons** for recipe photography (free, no API key, no redistribution concerns) and **Open Food Facts** for barcode → product lookup — both free public data sources, no paid API keys required to run this yourself.
-- No auth: everything hangs off one demo user (`src/lib/currentUser.ts`) so there's no login flow to build. The schema is already multi-user — swapping in real auth is a session-lookup change, not a data model change.
+## Testing
+`npm test` runs **60 Vitest tests in 4 files**: unit conversion and cost math, ingredient efficiency, grocery consolidation, pantry matching, the meal planner (budget adherence, cook-time and disliked-ingredient filters, meal type, cuisine preference), taste profile and scoring, request validation, the SSRF guard for recipe import, the rate limiter, and the cron endpoint's fail-closed authorization. Last run: 60 passed. `npm run lint` and `tsc --noEmit` are clean, and GitHub Actions runs lint, type-check and tests plus a Gitleaks secret scan.
+Not covered: React components, the database-backed API routes end to end, and the seed data.
 
-## Showcase notes
+## Tech Stack
+Next.js 15, React 19, TypeScript, Prisma + PostgreSQL (Neon), Zod, Tailwind CSS v4, Framer Motion, Vitest, ESLint, GitHub Actions, Vercel (with Cron). Data sources: Wikimedia Commons (images), Open Food Facts (barcodes).
 
-This is a portfolio piece, not a live product accepting real users, which shapes a few deliberate decisions:
-
-- **Single shared demo account.** Everyone who opens the live link uses the same account (`demo@skillet.app`), so there's no sign-up flow to build for a project not intended to hold real user data. Because visitors can edit that shared state, [`demoReset.ts`](src/lib/services/demoReset.ts) resets it to a curated baseline — sane preferences, a stocked pantry with a couple of items expiring soon, and a spread of liked/cooked/saved recipes across cuisines — daily via a [Vercel Cron job](vercel.json) (`/api/cron/reset-demo`, gated by a `CRON_SECRET`).
-- **Mock store pricing.** `pricing.ts` generates deterministic multi-store price variance rather than calling real grocery APIs, which require paid retail partnerships not available for a personal project.
-- **Recipe photos are representational, not literal** — sourced from Wikimedia Commons by dish name/cuisine, not photographed for these exact recipes. Disclosed in-app under [Terms](src/app/terms/page.tsx).
-- **Recipe import is best-effort.** It works reliably against sites that don't block automated requests (verified against food.com); some sites' bot protection blocks the fetch entirely, which is a real, accepted limitation rather than something worth working around.
-
-## Running it locally
-
+## Demo
+Live: https://skillet-five.vercel.app
+Run locally: create `.env` with `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (Postgres), then:
 ```bash
 npm install
-```
-
-Create `.env` with a Postgres connection string (a local Postgres, a Neon branch, or `vercel env pull .env` if you have access to the linked project):
-
-```
-DATABASE_URL="postgresql://..."
-DATABASE_URL_UNPOOLED="postgresql://..."  # same DB, non-pooled — used for db push/migrate
-```
-
-```bash
 npx prisma db push
 npm run db:seed
 npm run dev
+npm test
 ```
 
-Visit `http://localhost:3000`.
+## Current Status
+Completed personal portfolio project, deployed as a shared demo. Deliberate limits:
+- **Single shared demo account,** no sign-up/login.
+- **Store prices are generated** deterministically, not from real grocery APIs.
+- Recipe photos are representative images from Wikimedia Commons, not photos of these exact dishes.
+- Recipe import is best-effort; some sites block automated fetches. It only fetches public http(s) hosts (private/loopback/link-local addresses are blocked, redirects re-checked, 8 s timeout, 2 MB cap); DNS-rebinding is not fully mitigated.
+- Only some API routes validate request bodies with Zod (import, pantry, meal plan); the rest still trust their input.
+- The rate limiter is in-memory and per serverless instance, so it is a speed bump rather than a hard limit.
 
-- `npm run db:reset` — wipes and reseeds the database with all 277 recipes.
-- `npm run demo:reset` — resets just the demo user to the curated showcase state (pantry, preferences, taste history) without touching the recipe catalog.
-- `npm run build` — production build (also runs `prisma generate`).
-
-## Data
-
-- 258 seed ingredients with mock CAD pricing (`prisma/data/ingredients.ts`).
-- 277 original recipes across 17 cuisines (`prisma/data/recipes*.ts`), each with real ingredient quantities/units.
-- Recipe photography resolved from Wikimedia Commons at seed time and hand-audited for relevance (`prisma/data/images.ts`, `scripts/fetch-recipe-images.ts`).
-
-## Deployment
-
-Live on Vercel, project `redress69/skillet`, with a Neon Postgres database connected via Vercel's Storage integration (`vercel integration add neon`). `DATABASE_URL` / `DATABASE_URL_UNPOOLED` are injected automatically into the Vercel project's env — no manual secret management.
-
-### Neon quick reference
-
-- Dashboard: `vercel integration open neon skillet-db` (or the Vercel Storage tab).
-- Reseed production data: pull `DATABASE_URL`/`DATABASE_URL_UNPOOLED` into `.env` (see above) and run `npm run db:reset`.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+## Future Development
+Zod validation for the remaining routes, real authentication, real price data, a shared-store rate limiter, and database-backed route tests.

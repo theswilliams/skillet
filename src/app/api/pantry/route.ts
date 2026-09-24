@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
 import { countMakeableRecipes, countMajorityMatchRecipes } from "@/lib/services/pantry";
 import { visibleRecipesWhere } from "@/lib/services/visibility";
+import { addPantryItemSchema, firstError } from "@/lib/validation";
 
 export async function GET() {
   const userId = await getCurrentUserId();
@@ -30,12 +31,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { ingredientId, ingredientSlug, name, expiresAt } = (await req.json()) as {
-    ingredientId?: string;
-    ingredientSlug?: string;
-    name?: string;
-    expiresAt?: string;
-  };
+  const parsedBody = addPantryItemSchema.safeParse(await req.json().catch(() => null));
+  if (!parsedBody.success) return NextResponse.json({ error: firstError(parsedBody) }, { status: 400 });
+  const { ingredientId, ingredientSlug, name, expiresAt } = parsedBody.data;
   const userId = await getCurrentUserId();
 
   let ingredient = null;

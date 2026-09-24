@@ -11,6 +11,8 @@
  * list for that).
  */
 
+import { safeFetchHtml } from "@/lib/security/safeFetch";
+
 export type ParsedImportedRecipe = {
   name: string;
   description: string;
@@ -138,25 +140,16 @@ export async function fetchAndParseRecipe(url: string): Promise<ParsedImportedRe
   } catch {
     throw new Error("That doesn't look like a valid URL.");
   }
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    throw new Error("Only http/https URLs are supported.");
-  }
-
-  // A standard browser User-Agent, matching what the user's own browser would
-  // send if they fetched this page themselves — many recipe sites' bot
-  // protection blocks unrecognized/non-browser agents outright regardless of
-  // legitimate intent.
-  const res = await fetch(parsed.toString(), {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    },
-    redirect: "follow",
+  // SSRF-safe fetch: public hosts only (re-checked on every redirect), timeout,
+  // content-type and size limits. See src/lib/security/safeFetch.ts.
+  const { html, status, finalUrl } = await safeFetchHtml(parsed, {
+    // A standard browser User-Agent: many recipe sites block unrecognized agents outright.
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   });
-  if (!res.ok) throw new Error(`Couldn't fetch that page (${res.status}).`);
-
-  const html = await res.text();
+  if (!html) throw new Error(`Couldn't fetch that page (${status}).`);
+  parsed = finalUrl;
   const scriptMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
 
   const allRecipeNodes: Record<string, unknown>[] = [];
