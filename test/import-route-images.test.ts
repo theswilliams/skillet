@@ -183,3 +183,17 @@ describe("import size bounds", () => {
     expect(parsed.instructions.length).toBeLessThanOrEqual(MAX_INSTRUCTION_STEPS);
   });
 });
+
+describe("baseline security headers", () => {
+  it("applies nosniff, framing and referrer protection to every route", async () => {
+    const { SECURITY_HEADERS } = await import("@/lib/securityHeaders");
+    const config = (await import("../next.config")).default;
+    const all = (await config.headers!()).find((r) => r.source === "/:path*")!;
+    expect(all.headers).toEqual(SECURITY_HEADERS);
+    const v = (k: string) => SECURITY_HEADERS.find((h) => h.key === k)?.value;
+    expect(v("X-Content-Type-Options")).toBe("nosniff");
+    expect(v("X-Frame-Options")).toBe("DENY");
+    expect(v("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
+    expect(v("Permissions-Policy")).toMatch(/camera=\(self\)/);
+  });
+});
