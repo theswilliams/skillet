@@ -2,7 +2,7 @@
 
 A budget-first meal planner: swipe through recipes, generate a week of dinners that fits a weekly budget while reusing ingredients, and get one consolidated grocery list with pantry items subtracted. The planning, costing and recommendation logic is **plain, deterministic code (no LLM)** so results are reproducible and explainable.
 
-**Live demo:** https://skillet-five.vercel.app (one shared demo account; it resets daily)
+**Live demo:** https://skillet-five.vercel.app (one shared demo account, visible to every visitor, reset daily: please don't enter personal information; the app says so on every page)
 
 > Portfolio project, not a product with users. Store prices are simulated (see *Current Status*).
 
@@ -45,11 +45,11 @@ Everything hangs off a single demo user (`lib/currentUser.ts`); the schema is al
 - **Ops:** scheduled demo reset via Vercel Cron; Neon pooled URL at runtime, unpooled for migrations.
 
 ## Testing
-`npm test` runs **60 Vitest tests in 4 files**: unit conversion and cost math, ingredient efficiency, grocery consolidation, pantry matching, the meal planner (budget adherence, cook-time and disliked-ingredient filters, meal type, cuisine preference), taste profile and scoring, request validation, the SSRF guard for recipe import, the rate limiter, and the cron endpoint's fail-closed authorization. Last run: 60 passed. `npm run lint` and `tsc --noEmit` are clean, and GitHub Actions runs lint, type-check and tests plus a Gitleaks secret scan.
+`npm test` runs **177 Vitest tests in 7 files**: unit conversion and cost math, ingredient efficiency, grocery consolidation, pantry matching, the meal planner (budget adherence, cook-time and disliked-ingredient filters, meal type, cuisine preference), taste profile and scoring, request validation, the **SSRF guard for recipe import** (every private/reserved IPv4 and IPv6 range and address form, redirects to internal hosts, DNS-rebinding, size, content-type and timeout limits, and a real-socket test proving the transport never connects to an internal address), the image-host allowlist, the shared-demo notice, the rate limiter, and the cron endpoint's fail-closed authorization. Last run: 177 passed. `npm run lint` and `tsc --noEmit` are clean, and GitHub Actions runs lint, type-check, tests, a **production build** and a Gitleaks secret scan.
 Not covered: React components, the database-backed API routes end to end, and the seed data.
 
 ## Tech Stack
-Next.js 15, React 19, TypeScript, Prisma + PostgreSQL (Neon), Zod, Tailwind CSS v4, Framer Motion, Vitest, ESLint, GitHub Actions, Vercel (with Cron). Data sources: Wikimedia Commons (images), Open Food Facts (barcodes).
+Next.js 15 (patched 15.5.x), React 19, TypeScript, Prisma + PostgreSQL (Neon), Zod, Tailwind CSS v4, Framer Motion, Vitest, ESLint, GitHub Actions, Vercel (with Cron). Data sources: Wikimedia Commons (images), Open Food Facts (barcodes).
 
 ## Demo
 Live: https://skillet-five.vercel.app
@@ -67,9 +67,10 @@ Completed personal portfolio project, deployed as a shared demo. Deliberate limi
 - **Single shared demo account,** no sign-up/login.
 - **Store prices are generated** deterministically, not from real grocery APIs.
 - Recipe photos are representative images from Wikimedia Commons, not photos of these exact dishes.
-- Recipe import is best-effort; some sites block automated fetches. It only fetches public http(s) hosts (private/loopback/link-local addresses are blocked, redirects re-checked, 8 s timeout, 2 MB cap); DNS-rebinding is not fully mitigated.
+- Recipe import is best-effort; some sites block automated fetches. It is hardened against SSRF: only http(s) on ports 80/443, no embedded credentials; hostnames are resolved by a guarded DNS lookup at connect time and every address must be public (so DNS rebinding can't swap in an internal address); every redirect hop is re-validated (max 3); 8 s total deadline; HTML only, uncompressed, 2 MB cap; imports are capped at 60 ingredient lines. Imported recipe images are kept only from allow-listed hosts (Wikimedia Commons); other images fall back to the gradient card.
 - Only some API routes validate request bodies with Zod (import, pantry, meal plan); the rest still trust their input.
-- The rate limiter is in-memory and per serverless instance, so it is a speed bump rather than a hard limit.
+- The rate limiter is in-memory and per serverless instance, so it is a speed bump rather than a hard limit. The API is unauthenticated by design (single shared demo user), so anyone can change demo data until the daily reset.
+- `npm audit` reports 5 findings (1 moderate, 4 high) that only major upgrades (Next 16 for PostCSS, Prisma 7 for `deepmerge-ts`) can clear; they are in build-time tooling, not request-handling code. Next.js is on a patched 15.5 release.
 
 ## Future Development
 Zod validation for the remaining routes, real authentication, real price data, a shared-store rate limiter, and database-backed route tests.

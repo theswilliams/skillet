@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { DemoNotice } from "@/components/DemoNotice";
 
 export const metadata: Metadata = {
   title: "Skillet — your personal food optimizer",
@@ -19,7 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen bg-[var(--color-cream)] text-[var(--color-ink)] antialiased">
         <Nav />
-        <main className="min-h-screen pb-20 md:ml-56 md:pb-0">{children}</main>
+        <main className="min-h-screen pb-20 md:ml-56 md:pb-0">
+          <DemoNotice />
+          {children}
+        </main>
       </body>
     </html>
   );

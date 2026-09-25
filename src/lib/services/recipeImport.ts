@@ -12,6 +12,11 @@
  */
 
 import { safeFetchHtml } from "@/lib/security/safeFetch";
+import { isAllowedImageUrl } from "@/lib/imageHosts";
+
+export const MAX_INGREDIENT_LINES = 60;
+export const MAX_INSTRUCTION_STEPS = 60;
+const MAX_LINE_LENGTH = 300;
 
 export type ParsedImportedRecipe = {
   name: string;
@@ -174,8 +179,10 @@ export async function fetchAndParseRecipe(url: string): Promise<ParsedImportedRe
     []
   )
     .filter((x): x is string => typeof x === "string")
-    .map((s) => s.trim())
-    .filter(Boolean);
+    .map((s) => s.trim().slice(0, MAX_LINE_LENGTH))
+    .filter(Boolean)
+    // Bound what one import can write to the shared catalog (each line may create an ingredient row).
+    .slice(0, MAX_INGREDIENT_LINES);
 
   return {
     name: typeof recipeNode.name === "string" ? recipeNode.name : "Imported Recipe",
@@ -185,12 +192,16 @@ export async function fetchAndParseRecipe(url: string): Promise<ParsedImportedRe
     // would be redistribution, not personal use. Full context always stays
     // one click away via sourceUrl.
     description: shortDescription(recipeNode.description, recipeNode.name),
-    imageUrl: firstImage(recipeNode.image),
+    // Only keep images from allow-listed hosts: an arbitrary third-party URL would be fetched by every
+    // visitor's browser (tracking, mixed content, intranet probes). Others fall back to the gradient card.
+    imageUrl: ((img) => (isAllowedImageUrl(img) ? img : null))(firstImage(recipeNode.image)),
     prepMinutes: parseIsoDuration(recipeNode.prepTime as string | undefined),
     cookMinutes: parseIsoDuration(recipeNode.cookTime as string | undefined) || parseIsoDuration(recipeNode.totalTime as string | undefined),
     servings: parseServings(recipeNode.recipeYield),
     ingredientLines,
-    instructions: flattenInstructions(recipeNode.recipeInstructions),
+    instructions: flattenInstructions(recipeNode.recipeInstructions)
+      .slice(0, MAX_INSTRUCTION_STEPS)
+      .map((s) => s.slice(0, MAX_LINE_LENGTH * 4)),
     sourceUrl: parsed.toString(),
   };
 }

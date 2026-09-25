@@ -8,7 +8,7 @@ import { getCurrentUserId } from "@/lib/currentUser";
 import { visibleRecipesWhere } from "@/lib/services/visibility";
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q") ?? "";
+  const q = (req.nextUrl.searchParams.get("q") ?? "").slice(0, 200);
   if (!q.trim()) return NextResponse.json({ recipes: [], parsed: null });
 
   const parsed = await interpretQuery(q);

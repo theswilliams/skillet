@@ -13,6 +13,16 @@ export default function TermsPage() {
       <p className="mt-1 text-sm text-[var(--color-ink-soft)]">Last updated August 2026</p>
 
       <section className="mt-8">
+        <h2 className="text-lg font-bold">This is a shared public demo</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+          Skillet is a portfolio project, not a service with accounts. Every visitor uses the same
+          single demo account, so anything you add (pantry items, saved recipes, imported recipes) is
+          visible to everyone using the demo, and the account is reset to its starting state daily.
+          Please <strong className="text-[var(--color-ink)]">don&apos;t enter personal or private information</strong>.
+        </p>
+      </section>
+
+      <section className="mt-6">
         <h2 className="text-lg font-bold">Photos are for representation only</h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-soft)]">
           Recipe photos shown in Skillet are sourced from a general food-photo library and are

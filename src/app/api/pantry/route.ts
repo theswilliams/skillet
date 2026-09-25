@@ -4,6 +4,7 @@ import { getCurrentUserId } from "@/lib/currentUser";
 import { countMakeableRecipes, countMajorityMatchRecipes } from "@/lib/services/pantry";
 import { visibleRecipesWhere } from "@/lib/services/visibility";
 import { addPantryItemSchema, firstError } from "@/lib/validation";
+import { rateLimit, clientIp } from "@/lib/security/rateLimit";
 
 export async function GET() {
   const userId = await getCurrentUserId();
@@ -31,6 +32,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // The shared demo API is unauthenticated: bound how fast free-text names can add rows to the ingredient catalog.
+  if (!rateLimit(`pantry:${clientIp(req.headers)}`, 60, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
   const parsedBody = addPantryItemSchema.safeParse(await req.json().catch(() => null));
   if (!parsedBody.success) return NextResponse.json({ error: firstError(parsedBody) }, { status: 400 });
   const { ingredientId, ingredientSlug, name, expiresAt } = parsedBody.data;

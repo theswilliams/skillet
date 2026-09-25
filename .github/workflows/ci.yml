@@ -22,6 +22,8 @@ jobs:
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm test
+      # Production build with placeholder database URLs (no real credentials; nothing is contacted).
+      - run: npx next build
 
   secrets:
     runs-on: ubuntu-latest

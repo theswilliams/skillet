@@ -1,64 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { assertPublicHttpUrl, isPrivateAddress, safeFetchHtml, MAX_BODY_BYTES } from "@/lib/security/safeFetch";
+
 import { rateLimit } from "@/lib/security/rateLimit";
 import { addPantryItemSchema, generatePlanSchema, importRecipeSchema } from "@/lib/validation";
-
-describe("isPrivateAddress", () => {
-  it.each(["127.0.0.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.1", "169.254.169.254", "0.0.0.0", "100.64.0.1", "::1", "fd00::1", "fe80::1", "::ffff:127.0.0.1"])(
-    "blocks %s",
-    (ip) => expect(isPrivateAddress(ip)).toBe(true),
-  );
-  it.each(["93.184.216.34", "8.8.8.8", "172.32.0.1", "2606:4700:4700::1111"])("allows %s", (ip) =>
-    expect(isPrivateAddress(ip)).toBe(false),
-  );
-});
-
-describe("assertPublicHttpUrl", () => {
-  it("rejects non-http schemes, localhost and private literals", async () => {
-    await expect(assertPublicHttpUrl(new URL("file:///etc/passwd"))).rejects.toThrow();
-    await expect(assertPublicHttpUrl(new URL("http://localhost:3000/x"))).rejects.toThrow();
-    await expect(assertPublicHttpUrl(new URL("http://169.254.169.254/latest/meta-data"))).rejects.toThrow();
-    await expect(assertPublicHttpUrl(new URL("http://[::1]/"))).rejects.toThrow();
-  });
-  it("accepts a public IP literal", async () => {
-    await expect(assertPublicHttpUrl(new URL("https://93.184.216.34/recipe"))).resolves.toBeUndefined();
-  });
-});
-
-describe("safeFetchHtml", () => {
-  const html = (body: string, type = "text/html; charset=utf-8") =>
-    new Response(body, { status: 200, headers: { "content-type": type } });
-  const u = (s: string) => new URL(s);
-  const ok = "https://93.184.216.34/a";
-
-  it("returns the page body", async () => {
-    const f = vi.fn().mockResolvedValue(html("<p>hi</p>"));
-    const r = await safeFetchHtml(u(ok), {}, f as never);
-    expect(r.html).toBe("<p>hi</p>");
-  });
-  it("blocks a redirect to a private address", async () => {
-    const f = vi.fn().mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: "http://169.254.169.254/" } }));
-    await expect(safeFetchHtml(u(ok), {}, f as never)).rejects.toThrow(/isn't allowed/);
-    expect(f).toHaveBeenCalledTimes(1);
-  });
-  it("stops after too many redirects", async () => {
-    const f = vi.fn().mockImplementation(async () => new Response(null, { status: 302, headers: { location: "https://93.184.216.34/b" } }));
-    await expect(safeFetchHtml(u(ok), {}, f as never)).rejects.toThrow(/redirects/);
-  });
-  it("rejects non-HTML content types", async () => {
-    const f = vi.fn().mockResolvedValue(html("{}", "application/json"));
-    await expect(safeFetchHtml(u(ok), {}, f as never)).rejects.toThrow(/web page/);
-  });
-  it("rejects bodies over the size cap", async () => {
-    const f = vi.fn().mockResolvedValue(html("x".repeat(MAX_BODY_BYTES + 10)));
-    await expect(safeFetchHtml(u(ok), {}, f as never)).rejects.toThrow(/too large/);
-  });
-  it("reports non-OK statuses without a body", async () => {
-    const f = vi.fn().mockResolvedValue(new Response("nope", { status: 403 }));
-    const r = await safeFetchHtml(u(ok), {}, f as never);
-    expect(r).toMatchObject({ html: "", status: 403 });
-  });
-});
 
 describe("rateLimit", () => {
   it("allows up to the limit then blocks until the window resets", () => {
