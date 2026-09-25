@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/currentUser";
+import { barcodeScanSchema, firstError } from "@/lib/validation";
+import { rateLimit, clientIp } from "@/lib/security/rateLimit";
 
 /**
  * Barcode -> pantry item. Looks the barcode up in Open Food Facts (free,
@@ -9,10 +11,12 @@ import { getCurrentUserId } from "@/lib/currentUser";
  * and adds it to the user's pantry.
  */
 export async function POST(req: NextRequest) {
-  const { barcode, expiresAt } = (await req.json()) as { barcode: string; expiresAt?: string };
-  if (!barcode || !/^\d{6,14}$/.test(barcode)) {
-    return NextResponse.json({ error: "Invalid barcode" }, { status: 400 });
+  if (!rateLimit(`scan:${clientIp(req.headers)}`, 30, 60_000)) {
+    return NextResponse.json({ error: "Too many scans. Try again shortly." }, { status: 429 });
   }
+  const parsedBody = barcodeScanSchema.safeParse(await req.json().catch(() => null));
+  if (!parsedBody.success) return NextResponse.json({ error: firstError(parsedBody) }, { status: 400 });
+  const { barcode, expiresAt } = parsedBody.data;
 
   const userId = await getCurrentUserId();
 
@@ -23,6 +27,10 @@ export async function POST(req: NextRequest) {
     try {
       const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`, {
         headers: { "User-Agent": "SkilletApp/1.0 (personal-project meal planner)" },
+        // Fixed host, digits-only path (validated above). Don't hang the function on a slow
+        // third party, and never follow a redirect to somewhere else.
+        signal: AbortSignal.timeout(5000),
+        redirect: "error",
       });
       if (res.ok) {
         const data = await res.json();

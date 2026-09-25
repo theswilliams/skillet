@@ -19,6 +19,16 @@ export const addPantryItemSchema = z
     path: ["expiresAt"],
   });
 
+export const barcodeScanSchema = z.object({
+  // Digits only: the barcode is interpolated into a URL path, so anything else must never get through.
+  barcode: z.string().regex(/^\d{6,14}$/, "Invalid barcode"),
+  expiresAt: z
+    .string()
+    .max(40)
+    .refine((v) => !Number.isNaN(new Date(v).getTime()), "Invalid expiry date.")
+    .optional(),
+});
+
 export const generatePlanSchema = z
   .object({
     days: z.number().int().min(1).max(14).optional(),
