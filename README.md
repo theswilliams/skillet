@@ -12,7 +12,7 @@ A budget-first meal planner: swipe through recipes, generate a week of dinners t
 Skillet answers "what should I cook this week for $X?" It builds a taste profile from what you swipe, save and cook, plans dinners that fit the budget, favours recipes that share ingredients ("Cook Once, Eat 3 Times"), and turns the plan into a shopping list.
 
 ## Why I Built It
-*[Edit in your own words. Suggested:]* I wanted a project centred on algorithms and business rules rather than CRUD: a constrained optimisation problem (budget, taste, ingredient overlap), unit-aware cost math, and a recommendation loop, kept simple enough to test and explain.
+I wanted a project centred on algorithms and business rules rather than CRUD: a constrained optimisation problem (budget, taste, ingredient overlap), unit-aware cost math, and a recommendation loop, kept simple enough to test and explain.
 
 ## Key Features
 - **Swipe discovery:** like/pass/save deck personalised by a taste profile that updates from your behaviour.
